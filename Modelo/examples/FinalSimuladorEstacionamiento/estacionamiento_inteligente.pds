@@ -1,0 +1,137 @@
+Root-Coordinator
+ {
+  Simulator
+   {
+    Path = FinalSimuladorEstacionamiento/sensor_entrada.h
+    Parameters = 0.000000e+00,1.000000e+00,4.320000e+04
+   }
+  Simulator
+   {
+    Path = FinalSimuladorEstacionamiento/barrera_entrada.h
+    Parameters = 2.900000e+01,1.000000e+00,3.000000e+00,4.000000e+00,4.000000e+00,2.000000e+00
+   }
+  Simulator
+   {
+    Path = FinalSimuladorEstacionamiento/gen_aleatorio.h
+    Parameters = 1.000000e+01,3.000000e+00
+   }
+  Simulator
+   {
+    Path = sinks/to_disk.h
+    Parameters = "admitidos_directos.csv"
+   }
+  Simulator
+   {
+    Path = sinks/to_disk.h
+    Parameters = "arribos_generador.csv"
+   }
+  Simulator
+   {
+    Path = FinalSimuladorEstacionamiento/controlador.h
+    Parameters = 3.000000e+01,3.000000e+00
+   }
+  Simulator
+   {
+    Path = sinks/to_disk.h
+    Parameters = "admitidos_con_demora.csv"
+   }
+  Simulator
+   {
+    Path = FinalSimuladorEstacionamiento/sensor_salida.h
+    Parameters = 0.000000e+00,1.000000e+00
+   }
+  Simulator
+   {
+    Path = FinalSimuladorEstacionamiento/barrera_salida.h
+    Parameters = 2.900000e+01,1.000000e+00,3.000000e+00,4.000000e+00,4.000000e+00
+   }
+  Simulator
+   {
+    Path = FinalSimuladorEstacionamiento/estacionamiento.h
+    Parameters = 4.000000e+01,1.200000e+02,3.000000e+02
+   }
+  Simulator
+   {
+    Path = sinks/to_disk.h
+    Parameters = "arribos_estacionamiento.csv"
+   }
+  Simulator
+   {
+    Path = sinks/to_disk.h
+    Parameters = "admitidos_totales.csv"
+   }
+  Simulator
+   {
+    Path = FinalSimuladorEstacionamiento/monitor.h
+    Parameters = 3.000000e+01
+   }
+  Simulator
+   {
+    Path = sinks/to_disk.h
+    Parameters = "zz_tiempo_prom_permanencia.csv"
+   }
+  Simulator
+   {
+    Path = sinks/to_disk.h
+    Parameters = "zz_tasa_rechazo.csv"
+   }
+  Simulator
+   {
+    Path = sinks/to_disk.h
+    Parameters = "zz_ocupacion_promedio.csv"
+   }
+  Simulator
+   {
+    Path = sinks/gnuplot.h
+    Parameters = 1.000000e+00,"set xrange [0:%tf] @ set grid @ set title 'Promedio de Permanencia' @ set xlabel 'Tiempo (t)' @ set ylabel 'Promedio de permanencia'","with lines title 'Prom. permanencia'","","","",""
+   }
+  Simulator
+   {
+    Path = sinks/gnuplot.h
+    Parameters = 1.000000e+00,"set xrange [0:%tf] @ set grid @ set title 'Tasa de Rechazo' @ set xlabel 'Tiempo (t)' @ set ylabel 'Tasa de Rechazo'","with lines title 'Tasa de Rechazo'","","","",""
+   }
+  Simulator
+   {
+    Path = sinks/gnuplot.h
+    Parameters = 1.000000e+00,"set xrange [0:%tf] @ set grid @ set title 'Ocupacion Promedio' @ set xlabel 'Tiempo (t)' @ set ylabel 'Ocupacion Promedio'","with lines title 'Ocupacion Promedio'","","","",""
+   }
+  EIC
+   {
+   }
+  EOC
+   {
+   }
+  IC
+   {
+    (2,0);(4,0)
+    (2,0);(0,0)
+    (0,0);(5,1)
+    (7,0);(5,2)
+    (5,3);(7,1)
+    (5,4);(8,0)
+    (9,0);(7,0)
+    (5,2);(1,1)
+    (5,1);(0,1)
+    (5,5);(7,1)
+    (5,0);(1,0)
+    (5,6);(0,1)
+    (5,0);(3,0)
+    (1,0);(12,0)
+    (5,5);(6,0)
+    (5,5);(1,0)
+    (1,1);(5,4)
+    (1,1);(12,1)
+    (5,1);(9,0)
+    (5,1);(10,0)
+    (1,0);(5,0)
+    (1,0);(11,0)
+    (8,0);(5,3)
+    (8,0);(12,2)
+    (12,0);(16,0)
+    (12,0);(13,0)
+    (12,2);(18,0)
+    (12,2);(15,0)
+    (12,1);(17,0)
+    (12,1);(14,0)
+   }
+ }

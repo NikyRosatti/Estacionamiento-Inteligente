@@ -16,10 +16,9 @@ void monitor::init(double t, ...)
     // Inicialización de variables según los parámetros desde el editor
     va_list parameters;
     va_start(parameters, t);
+    K_ESTACIONAMENTO = va_arg(parameters, double);   // Inicializo la constante de capacidad máxima
     va_end(parameters);
 
-    // Inicializacion de constantes
-    K_ESTACIONAMENTO = 30.0;
     // Puertos de entrada
     BARRERA_ENTRADA_ADMITIDOS = 0;
     BARRERA_ENTRADA_RECHAZADOS = 1;

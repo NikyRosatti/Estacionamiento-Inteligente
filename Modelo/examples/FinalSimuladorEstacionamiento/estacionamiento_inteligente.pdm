@@ -1,0 +1,731 @@
+Coupled
+    {
+    Type = Root
+    Name = andanBien3
+    Ports = 0; 0
+    Description = 
+    Graphic
+        {
+        Position = 0; 0
+        Dimension = 600; 600
+        Direction = Right
+        Color = 15
+        Icon = 
+        Window = 5000; 5000; 5000; 5000
+        }
+    Parameters
+        {
+        }
+    System
+        {
+        Atomic
+            {
+            Name = SensorEntrada
+            Ports = 2 ; 1
+            Path = FinalSimuladorEstacionamiento/sensor_entrada.h
+            Description = Atomic DEVS model
+            Graphic
+                {
+                Position = -14865 ; -6030
+                Dimension = 795 ; 810
+                Direction = Right
+                Color = 7
+                Icon = None
+                }
+            Parameters
+                {
+                valor = Val; 0 ; 
+                latencia = Val; 1 ; Delay para detectar autos
+                TIEMPO_MAX_ENTRADA_VEHICULOS = Val; 43200 ; 
+                }
+            }
+        Atomic
+            {
+            Name = BarreraEntrada
+            Ports = 2 ; 2
+            Path = FinalSimuladorEstacionamiento/barrera_entrada.h
+            Description = Atomic DEVS model
+            Graphic
+                {
+                Position = -7890 ; -6705
+                Dimension = 795 ; 810
+                Direction = Right
+                Color = 11
+                Icon = None
+                }
+            Parameters
+                {
+                seed = Val; 29 ; 
+                a = Val; 1 ; 
+                b = Val; 3 ; 
+                apertura_barrera = Val; 4 ; Tiempo que tarda la barrera en abrirse.
+                cierre_barrera = Val; 4 ; Tiempo que tarda la barrera en cerrarse.
+                tiempo_retiro = Val; 2 ; tiempo que demora en irse un auto rechazado
+                }
+            }
+        Atomic
+            {
+            Name = Generador_Exponencial_Aleatorio
+            Ports = 0 ; 1
+            Path = FinalSimuladorEstacionamiento/gen_aleatorio.h
+            Description = Atomic DEVS model
+            Graphic
+                {
+                Position = -18540 ; -6180
+                Dimension = 795 ; 810
+                Direction = Right
+                Color = 15
+                Icon = None
+                }
+            Parameters
+                {
+                mean = Val; 10 ; 
+                seed = Val; 3 ; 
+                }
+            }
+        Atomic
+            {
+            Name = Admitidos_Directos
+            Ports = 1 ; 0
+            Path = sinks/to_disk.h
+            Description = Save the values (event,t) in a file.
+            Graphic
+                {
+                Position = -7515 ; -9330
+                Dimension = 795 ; 810
+                Direction = Down
+                Color = 15
+                Icon = %sinks%todisk.svg
+                }
+            Parameters
+                {
+                File = Str; admitidos_directos.csv ; file name
+                }
+            }
+        Atomic
+            {
+            Name = Arribos_Generador
+            Ports = 1 ; 0
+            Path = sinks/to_disk.h
+            Description = Save the values (event,t) in a file.
+            Graphic
+                {
+                Position = -17310 ; -8340
+                Dimension = 885 ; 780
+                Direction = Up
+                Color = 15
+                Icon = %sinks%todisk.svg
+                }
+            Parameters
+                {
+                File = Str; arribos_generador.csv ; file name
+                }
+            }
+        Atomic
+            {
+            Name = Controlador
+            Ports = 5 ; 7
+            Path = FinalSimuladorEstacionamiento/controlador.h
+            Description = Atomic DEVS model
+            Graphic
+                {
+                Position = -12210 ; -6780
+                Dimension = 1635 ; 3810
+                Direction = Right
+                Color = 13
+                Icon = None
+                }
+            Parameters
+                {
+                capacidad_estacionamiento = Val; 30 ; Capacidad maxima de autos que debe permitir en el estacionamiento
+                tiempo_max_rta_controlador = Val; 3 ; 
+                }
+            }
+        Atomic
+            {
+            Name = Admitidos_Con_Demora
+            Ports = 1 ; 0
+            Path = sinks/to_disk.h
+            Description = Save the values (event,t) in a file.
+            Graphic
+                {
+                Position = -8940 ; -8805
+                Dimension = 795 ; 810
+                Direction = Down
+                Color = 15
+                Icon = %sinks%todisk.svg
+                }
+            Parameters
+                {
+                File = Str; admitidos_con_demora.csv ; file name
+                }
+            }
+        Atomic
+            {
+            Name = SensorSalida
+            Ports = 2 ; 1
+            Path = FinalSimuladorEstacionamiento/sensor_salida.h
+            Description = Atomic DEVS model
+            Graphic
+                {
+                Position = -14865 ; -3330
+                Dimension = 795 ; 810
+                Direction = Right
+                Color = 10
+                Icon = None
+                }
+            Parameters
+                {
+                valor = Val; 0 ; 
+                latencia = Val; 1 ; delay para detectar al auto que desea salir
+                }
+            }
+        Atomic
+            {
+            Name = BarreraSalida
+            Ports = 1 ; 1
+            Path = FinalSimuladorEstacionamiento/barrera_salida.h
+            Description = Atomic DEVS model
+            Graphic
+                {
+                Position = -8340 ; -2430
+                Dimension = 795 ; 810
+                Direction = Right
+                Color = 12
+                Icon = None
+                }
+            Parameters
+                {
+                seed = Val; 29 ; 
+                a = Val; 1 ; 
+                b = Val; 3 ; 
+                apertura_barrera = Val; 4 ; Tiempo que tarda la barrera en abrirse.
+                cierre_barrera = Val; 4 ; Tiempo que tarda la barrera en cerrarse.
+                }
+            }
+        Atomic
+            {
+            Name = Estacionamiento
+            Ports = 1 ; 1
+            Path = FinalSimuladorEstacionamiento/estacionamiento.h
+            Description = Atomic DEVS model
+            Graphic
+                {
+                Position = -7890 ; -4755
+                Dimension = 795 ; 810
+                Direction = Right
+                Color = 8
+                Icon = None
+                }
+            Parameters
+                {
+                seed = Val; 40 ; 
+                a = Val; 120 ; 
+                b = Val; 300 ; 
+                }
+            }
+        Atomic
+            {
+            Name = Arribos_Estacionamiento
+            Ports = 1 ; 0
+            Path = sinks/to_disk.h
+            Description = Save the values (event,t) in a file.
+            Graphic
+                {
+                Position = -4140 ; -5130
+                Dimension = 795 ; 810
+                Direction = Down
+                Color = 15
+                Icon = %sinks%todisk.svg
+                }
+            Parameters
+                {
+                File = Str; arribos_estacionamiento.csv ; file name
+                }
+            }
+        Atomic
+            {
+            Name = Admitidos_Totales
+            Ports = 1 ; 0
+            Path = sinks/to_disk.h
+            Description = Save the values (event,t) in a file.
+            Graphic
+                {
+                Position = -4215 ; -6855
+                Dimension = 795 ; 810
+                Direction = Right
+                Color = 15
+                Icon = %sinks%todisk.svg
+                }
+            Parameters
+                {
+                File = Str; admitidos_totales.csv ; file name
+                }
+            }
+        Atomic
+            {
+            Name = Monitor
+            Ports = 3 ; 3
+            Path = FinalSimuladorEstacionamiento/monitor.h
+            Description = Atomic DEVS model
+            Graphic
+                {
+                Position = -4215 ; -8955
+                Dimension = 795 ; 810
+                Direction = Right
+                Color = 6
+                Icon = None
+                }
+            Parameters
+                {
+                K_ESTACIONAMIENTO = Val; 30 ; Capacidad máxima del estacionamiento: para corroborar la propiedad de safety
+                }
+            }
+        Atomic
+            {
+            Name = TiempoPromPerm
+            Ports = 1 ; 0
+            Path = sinks/to_disk.h
+            Description = Save the values (event,t) in a file.
+            Graphic
+                {
+                Position = -1140 ; -10830
+                Dimension = 795 ; 810
+                Direction = Right
+                Color = 15
+                Icon = %sinks%todisk.svg
+                }
+            Parameters
+                {
+                File = Str; zz_tiempo_prom_permanencia.csv ; file name
+                }
+            }
+        Atomic
+            {
+            Name = TasaRechazo
+            Ports = 1 ; 0
+            Path = sinks/to_disk.h
+            Description = Save the values (event,t) in a file.
+            Graphic
+                {
+                Position = -1140 ; -8955
+                Dimension = 795 ; 810
+                Direction = Right
+                Color = 15
+                Icon = %sinks%todisk.svg
+                }
+            Parameters
+                {
+                File = Str; zz_tasa_rechazo.csv ; file name
+                }
+            }
+        Atomic
+            {
+            Name = OcupacionPromedio
+            Ports = 1 ; 0
+            Path = sinks/to_disk.h
+            Description = Save the values (event,t) in a file.
+            Graphic
+                {
+                Position = -1140 ; -7380
+                Dimension = 795 ; 810
+                Direction = Right
+                Color = 15
+                Icon = %sinks%todisk.svg
+                }
+            Parameters
+                {
+                File = Str; zz_ocupacion_promedio.csv ; file name
+                }
+            }
+        Atomic
+            {
+            Name = GnuPlot_Promedio_Permanencia
+            Ports = 1 ; 0
+            Path = sinks/gnuplot.h
+            Description = Plot input signal using GnuPlot
+            Graphic
+                {
+                Position = 960 ; -10830
+                Dimension = 795 ; 810
+                Direction = Left
+                Color = 15
+                Icon = %sinks%gnuplot.svg
+                }
+            Parameters
+                {
+                Inputs = Str; %Inputs ; Number of inputs
+                Format = Str; set xrange [0:%tf] @ set grid @ set title 'Promedio de Permanencia' @ set xlabel 'Tiempo (t)' @ set ylabel 'Promedio de permanencia' ; General Formatting (use @ as line break)
+                Format1 = Str; with lines title 'Prom. permanencia' ; Formatting options for input 1
+                Format2 = Str;  ; Formatting options for input 2
+                Format3 = Str;  ; Formatting options for input 3
+                Format4 = Str;  ; Formatting options for input 4
+                Format5 = Str;  ; Formatting options for input 5
+                }
+            }
+        Atomic
+            {
+            Name = GnuPlot_Tasa_Rechazo
+            Ports = 1 ; 0
+            Path = sinks/gnuplot.h
+            Description = Plot input signal using GnuPlot
+            Graphic
+                {
+                Position = 960 ; -8955
+                Dimension = 795 ; 810
+                Direction = Left
+                Color = 15
+                Icon = %sinks%gnuplot.svg
+                }
+            Parameters
+                {
+                Inputs = Str; %Inputs ; Number of inputs
+                Format = Str; set xrange [0:%tf] @ set grid @ set title 'Tasa de Rechazo' @ set xlabel 'Tiempo (t)' @ set ylabel 'Tasa de Rechazo' ; General Formatting (use @ as line break)
+                Format1 = Str; with lines title 'Tasa de Rechazo' ; Formatting options for input 1
+                Format2 = Str;  ; Formatting options for input 2
+                Format3 = Str;  ; Formatting options for input 3
+                Format4 = Str;  ; Formatting options for input 4
+                Format5 = Str;  ; Formatting options for input 5
+                }
+            }
+        Atomic
+            {
+            Name = GnuPlot_Ocupacion_Promedio
+            Ports = 1 ; 0
+            Path = sinks/gnuplot.h
+            Description = Plot input signal using GnuPlot
+            Graphic
+                {
+                Position = 960 ; -7380
+                Dimension = 795 ; 810
+                Direction = Left
+                Color = 15
+                Icon = %sinks%gnuplot.svg
+                }
+            Parameters
+                {
+                Inputs = Str; %Inputs ; Number of inputs
+                Format = Str; set xrange [0:%tf] @ set grid @ set title 'Ocupacion Promedio' @ set xlabel 'Tiempo (t)' @ set ylabel 'Cantidad de autos' ; General Formatting (use @ as line break)
+                Format1 = Str; with lines title 'Ocupacion Promedio' ; Formatting options for input 1
+                Format2 = Str;  ; Formatting options for input 2
+                Format3 = Str;  ; Formatting options for input 3
+                Format4 = Str;  ; Formatting options for input 4
+                Format5 = Str;  ; Formatting options for input 5
+                }
+            }
+        Point
+            {
+            ConectedLines = 14 ; 17 ; 23
+            ConectedExtrems = Org ; Org ; Org
+            Position = -9525 ; -6300
+            }
+        Point
+            {
+            ConectedLines = 18 ; 19 ; 31
+            ConectedExtrems = Org ; Org ; Org
+            Position = -6000 ; -6150
+            }
+        Point
+            {
+            ConectedLines = 11 ; 21 ; 22
+            ConectedExtrems = Org ; Org ; Org
+            Position = -8175 ; -5025
+            }
+        Point
+            {
+            ConectedLines = 4 ; 25 ; 26
+            ConectedExtrems = Org ; Org ; Org
+            Position = -6000 ; -6450
+            }
+        Point
+            {
+            ConectedLines = 7 ; 9 ; 32
+            ConectedExtrems = Org ; Org ; Org
+            Position = -7125 ; -2025
+            }
+        Point
+            {
+            ConectedLines = 27 ; 33 ; 34
+            ConectedExtrems = Org ; Org ; Org
+            Position = -1575 ; -10410
+            }
+        Point
+            {
+            ConectedLines = 29 ; 35 ; 36
+            ConectedExtrems = Org ; Org ; Org
+            Position = -1575 ; -7005
+            }
+        Point
+            {
+            ConectedLines = 28 ; 37 ; 38
+            ConectedExtrems = Org ; Org ; Org
+            Position = -1575 ; -8565
+            }
+        Line
+            {
+            Source = Cmp ;  5 ;  1 ; -1
+            Sink = Cmp ;  3 ;  1 ; 0
+            PointX = -16875 ; -16875 ; -17625
+            PointY = -7335 ; -5775 ; -5775
+            }
+        Line
+            {
+            Source = Cmp ;  3 ;  1 ; 0
+            Sink = Cmp ;  1 ;  1 ; -1
+            PointX = -17625 ; -17625 ; -15015
+            PointY = -5775 ; -5775 ; -5775
+            }
+        Line
+            {
+            Source = Cmp ;  6 ;  2 ; -1
+            Sink = Cmp ;  1 ;  1 ; 0
+            PointX = -12390 ; -12390 ; -13950
+            PointY = -5625 ; -5625 ; -5625
+            }
+        Line
+            {
+            Source = Cmp ;  6 ;  1 ; -1
+            Sink = Pnt ;  4 ; -1 ; 0
+            PointX = -12390 ; -12750 ; -12750 ; -6000 ; -6000
+            PointY = -6375 ; -6375 ; -7275 ; -7275 ; -6450
+            }
+        Line
+            {
+            Source = Cmp ;  8 ;  1 ; 0
+            Sink = Cmp ;  6 ;  3 ; -1
+            PointX = -13950 ; -13725 ; -13725 ; -12390
+            PointY = -2925 ; -2925 ; -4875 ; -4875
+            }
+        Line
+            {
+            Source = Cmp ;  6 ;  4 ; 0
+            Sink = Cmp ;  8 ;  2 ; -1
+            PointX = -10425 ; -10050 ; -10050 ; -15300 ; -15300 ; -15015
+            PointY = -4875 ; -4875 ; -1425 ; -1425 ; -2775 ; -2775
+            }
+        Line
+            {
+            Source = Cmp ;  9 ;  1 ; 0
+            Sink = Pnt ;  5 ; -1 ; 0
+            PointX = -7425 ; -7425 ; -7125
+            PointY = -2025 ; -2025 ; -2025
+            }
+        Line
+            {
+            Source = Cmp ;  6 ;  5 ; 0
+            Sink = Cmp ;  9 ;  1 ; -1
+            PointX = -10425 ; -8775 ; -8775 ; -8490
+            PointY = -4350 ; -4350 ; -2025 ; -2025
+            }
+        Line
+            {
+            Source = Pnt ;  5 ; -1 ; 0
+            Sink = Cmp ;  6 ;  4 ; -1
+            PointX = -7125 ; -6975 ; -6975 ; -13050 ; -13050 ; -12390
+            PointY = -2025 ; -2025 ; -450 ; -450 ; -4200 ; -4200
+            }
+        Line
+            {
+            Source = Cmp ;  10 ;  1 ; 0
+            Sink = Cmp ;  8 ;  1 ; -1
+            PointX = -6975 ; -6450 ; -6450 ; -15525 ; -15525 ; -15015
+            PointY = -4350 ; -4350 ; -75 ; -75 ; -3075 ; -3075
+            }
+        Line
+            {
+            Source = Cmp ;  10 ;  1 ; -1
+            Sink = Pnt ;  3 ; -1 ; 0
+            PointX = -8040 ; -8175 ; -8175
+            PointY = -4350 ; -4350 ; -5025
+            }
+        Line
+            {
+            Source = Cmp ;  6 ;  3 ; 0
+            Sink = Cmp ;  2 ;  2 ; -1
+            PointX = -10425 ; -8775 ; -8775 ; -8040
+            PointY = -5400 ; -5400 ; -6150 ; -6150
+            }
+        Line
+            {
+            Source = Cmp ;  6 ;  2 ; 0
+            Sink = Cmp ;  1 ;  2 ; -1
+            PointX = -10425 ; -10350 ; -10350 ; -15975 ; -15975 ; -15015
+            PointY = -5925 ; -5925 ; -6975 ; -6975 ; -5475 ; -5475
+            }
+        Line
+            {
+            Source = Cmp ;  6 ;  6 ; 0
+            Sink = Pnt ;  1 ; -1 ; 0
+            PointX = -10425 ; -9825 ; -9825 ; -9525
+            PointY = -3825 ; -3825 ; -6300 ; -6300
+            }
+        Line
+            {
+            Source = Cmp ;  6 ;  6 ; 0
+            Sink = Cmp ;  8 ;  2 ; -1
+            PointX = -10425 ; -9675 ; -9675 ; -15075 ; -15075 ; -15015
+            PointY = -3825 ; -3825 ; -1950 ; -1950 ; -2775 ; -2775
+            }
+        Line
+            {
+            Source = Cmp ;  6 ;  1 ; 0
+            Sink = Cmp ;  2 ;  1 ; -1
+            PointX = -10425 ; -10425 ; -8040
+            PointY = -6450 ; -6450 ; -6450
+            }
+        Line
+            {
+            Source = Cmp ;  7 ;  1 ; -1
+            Sink = Pnt ;  1 ; -1 ; 0
+            PointX = -8550 ; -9525 ; -9525
+            PointY = -8940 ; -8940 ; -6300
+            }
+        Line
+            {
+            Source = Cmp ;  2 ;  2 ; 0
+            Sink = Pnt ;  2 ; -1 ; 0
+            PointX = -6975 ; -6975 ; -6000
+            PointY = -6150 ; -6150 ; -6150
+            }
+        Line
+            {
+            Source = Pnt ;  2 ; -1 ; 0
+            Sink = Cmp ;  6 ;  5 ; -1
+            PointX = -6000 ; -6000 ; -12525 ; -12525 ; -12390
+            PointY = -6150 ; 300 ; 300 ; -3450 ; -3450
+            }
+        Line
+            {
+            Source = Cmp ;  6 ;  7 ; 0
+            Sink = Cmp ;  1 ;  2 ; -1
+            PointX = -10425 ; -10275 ; -10275 ; -16050 ; -16050 ; -15015
+            PointY = -3300 ; -3300 ; -975 ; -975 ; -5475 ; -5475
+            }
+        Line
+            {
+            Source = Cmp ;  11 ;  1 ; -1
+            Sink = Pnt ;  3 ; -1 ; 0
+            PointX = -3750 ; -8175 ; -8175
+            PointY = -5265 ; -5265 ; -5025
+            }
+        Line
+            {
+            Source = Pnt ;  3 ; -1 ; 0
+            Sink = Cmp ;  6 ;  2 ; 0
+            PointX = -8175 ; -10125 ; -10125 ; -10425
+            PointY = -5025 ; -5025 ; -5925 ; -5925
+            }
+        Line
+            {
+            Source = Pnt ;  1 ; -1 ; 0
+            Sink = Cmp ;  2 ;  1 ; -1
+            PointX = -9525 ; -8325 ; -8325 ; -8040
+            PointY = -6300 ; -6300 ; -6450 ; -6450
+            }
+        Line
+            {
+            Source = Cmp ;  4 ;  1 ; -1
+            Sink = Cmp ;  6 ;  1 ; 0
+            PointX = -7125 ; -10200 ; -10200 ; -10425
+            PointY = -9465 ; -9465 ; -6450 ; -6450
+            }
+        Line
+            {
+            Source = Cmp ;  12 ;  1 ; -1
+            Sink = Pnt ;  4 ; -1 ; 0
+            PointX = -4365 ; -4365 ; -6000
+            PointY = -6450 ; -6450 ; -6450
+            }
+        Line
+            {
+            Source = Pnt ;  4 ; -1 ; 0
+            Sink = Cmp ;  2 ;  1 ; 0
+            PointX = -6000 ; -6000 ; -6975
+            PointY = -6450 ; -6450 ; -6450
+            }
+        Line
+            {
+            Source = Cmp ;  13 ;  1 ; 0
+            Sink = Pnt ;  6 ; -1 ; 0
+            PointX = -3300 ; -1950 ; -1950 ; -1575
+            PointY = -8775 ; -8775 ; -10410 ; -10410
+            }
+        Line
+            {
+            Source = Cmp ;  13 ;  2 ; 0
+            Sink = Pnt ;  8 ; -1 ; 0
+            PointX = -3300 ; -1575 ; -1575
+            PointY = -8550 ; -8550 ; -8565
+            }
+        Line
+            {
+            Source = Cmp ;  13 ;  3 ; 0
+            Sink = Pnt ;  7 ; -1 ; 0
+            PointX = -3300 ; -1950 ; -1950 ; -1575
+            PointY = -8325 ; -8325 ; -7005 ; -7005
+            }
+        Line
+            {
+            Source = Cmp ;  13 ;  1 ; -1
+            Sink = Cmp ;  2 ;  1 ; 0
+            PointX = -4365 ; -5700 ; -5700 ; -6975
+            PointY = -8775 ; -8775 ; -6450 ; -6450
+            }
+        Line
+            {
+            Source = Cmp ;  13 ;  2 ; -1
+            Sink = Pnt ;  2 ; -1 ; 0
+            PointX = -4365 ; -5250 ; -5250 ; -6000
+            PointY = -8550 ; -8550 ; -6150 ; -6150
+            }
+        Line
+            {
+            Source = Cmp ;  13 ;  3 ; -1
+            Sink = Pnt ;  5 ; -1 ; 0
+            PointX = -4365 ; -4725 ; -4725 ; -7125 ; -7125
+            PointY = -8325 ; -8325 ; -2250 ; -2250 ; -2025
+            }
+        Line
+            {
+            Source = Cmp ;  17 ;  1 ; -1
+            Sink = Pnt ;  6 ; -1 ; 0
+            PointX = 1890 ; 2550 ; 2550 ; -1575 ; -1575
+            PointY = -10425 ; -10425 ; -11250 ; -11250 ; -10410
+            }
+        Line
+            {
+            Source = Pnt ;  6 ; -1 ; 0
+            Sink = Cmp ;  14 ;  1 ; -1
+            PointX = -1575 ; -1290 ; -1290
+            PointY = -10410 ; -10410 ; -10425
+            }
+        Line
+            {
+            Source = Cmp ;  19 ;  1 ; -1
+            Sink = Pnt ;  7 ; -1 ; 0
+            PointX = 1890 ; 2550 ; 2550 ; -1575 ; -1575
+            PointY = -6975 ; -6975 ; -6000 ; -6000 ; -7005
+            }
+        Line
+            {
+            Source = Pnt ;  7 ; -1 ; 0
+            Sink = Cmp ;  16 ;  1 ; -1
+            PointX = -1575 ; -1290 ; -1290
+            PointY = -7005 ; -7005 ; -6975
+            }
+        Line
+            {
+            Source = Cmp ;  18 ;  1 ; -1
+            Sink = Pnt ;  8 ; -1 ; 0
+            PointX = 1890 ; 2475 ; 2475 ; -1575 ; -1575
+            PointY = -8550 ; -8550 ; -9150 ; -9150 ; -8565
+            }
+        Line
+            {
+            Source = Pnt ;  8 ; -1 ; 0
+            Sink = Cmp ;  15 ;  1 ; -1
+            PointX = -1575 ; -1290 ; -1290
+            PointY = -8565 ; -8565 ; -8550
+            }
+        }
+    }
