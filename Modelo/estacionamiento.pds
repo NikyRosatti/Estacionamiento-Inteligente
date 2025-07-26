@@ -1,0 +1,185 @@
+Root-Coordinator
+ {
+  Simulator
+   {
+    Path = discrete/sensor_entrada.h
+    Parameters = 0.000000e+00
+   }
+  Simulator
+   {
+    Path = discrete/barrera_entrada.h
+    Parameters = 2.900000e+01,1.000000e+00,3.000000e+00
+   }
+  Simulator
+   {
+    Path = discrete/gen_aleatorio.h
+    Parameters = 1.000000e+01,3.000000e+00
+   }
+  Simulator
+   {
+    Path = discrete/guardar_en_disco.h
+    Parameters = "admitidos_directos.csv"
+   }
+  Simulator
+   {
+    Path = discrete/guardar_en_disco.h
+    Parameters = "arribos_generador.csv"
+   }
+  Simulator
+   {
+    Path = discrete/guardar_en_disco.h
+    Parameters = "SensorEntrada_Ida_Controlador.csv"
+   }
+  Simulator
+   {
+    Path = discrete/controlador.h
+    Parameters = 
+   }
+  Simulator
+   {
+    Path = discrete/guardar_en_disco.h
+    Parameters = "admitidos_con_demora.csv"
+   }
+  Simulator
+   {
+    Path = discrete/sensor_salida.h
+    Parameters = 0.000000e+00
+   }
+  Simulator
+   {
+    Path = discrete/barrera_salida.h
+    Parameters = 2.900000e+01,1.000000e+00,3.000000e+00
+   }
+  Simulator
+   {
+    Path = discrete/guardar_en_disco.h
+    Parameters = "sensor_salida_a_controlador.csv"
+   }
+  Simulator
+   {
+    Path = discrete/guardar_en_disco.h
+    Parameters = "salidas_estacionamiento.csv"
+   }
+  Simulator
+   {
+    Path = discrete/guardar_en_disco.h
+    Parameters = "controlador_a_barrera_salida.csv"
+   }
+  Simulator
+   {
+    Path = discrete/guardar_en_disco.h
+    Parameters = "barrera_salida_a_controlador.csv"
+   }
+  Simulator
+   {
+    Path = sinks/to_disk.h
+    Parameters = "controlador_a_sensor_salida.csv"
+   }
+  Simulator
+   {
+    Path = discrete/estacionamiento.h
+    Parameters = 4.000000e+01,1.200000e+02,3.000000e+02
+   }
+  Simulator
+   {
+    Path = discrete/guardar_en_disco.h
+    Parameters = "SensorEntrada_Vuelta_del_controlador.csv"
+   }
+  Simulator
+   {
+    Path = discrete/guardar_en_disco.h
+    Parameters = "rechazados.csv"
+   }
+  Simulator
+   {
+    Path = discrete/guardar_en_disco.h
+    Parameters = "arribos_estacionamiento.csv"
+   }
+  Simulator
+   {
+    Path = discrete/guardar_en_disco.h
+    Parameters = "admitidos_totales.csv"
+   }
+  Simulator
+   {
+    Path = discrete/monitor.h
+    Parameters = 
+   }
+  Simulator
+   {
+    Path = discrete/guardar_en_disco.h
+    Parameters = "zz_tiempo_prom_permanencia.csv"
+   }
+  Simulator
+   {
+    Path = discrete/guardar_en_disco.h
+    Parameters = "zz_tasa_rechazo.csv"
+   }
+  Simulator
+   {
+    Path = discrete/guardar_en_disco.h
+    Parameters = "zz_ocupacion_promedio.csv"
+   }
+  Simulator
+   {
+    Path = sinks/gnuplot.h
+    Parameters = 1.000000e+00,"set xrange [0:%tf] @ set grid @ set title 'Promedio de Permanencia'","with lines title 'Prom. permanencia'","","","",""
+   }
+  Simulator
+   {
+    Path = sinks/gnuplot.h
+    Parameters = 1.000000e+00,"set xrange [0:%tf] @ set grid @ set title 'Tasa de Rechazo'","with lines title 'Tasa de Rechazo'","","","",""
+   }
+  Simulator
+   {
+    Path = sinks/gnuplot.h
+    Parameters = 1.000000e+00,"set xrange [0:%tf] @ set grid @ set title 'Ocupacion Promedio'","with lines title 'Ocupacion Promedio'","","","",""
+   }
+  EIC
+   {
+   }
+  EOC
+   {
+   }
+  IC
+   {
+    (2,0);(4,0)
+    (0,0);(5,0)
+    (2,0);(0,0)
+    (0,0);(6,1)
+    (8,0);(6,2)
+    (8,0);(10,0)
+    (6,2);(1,1)
+    (6,5);(8,1)
+    (6,0);(1,0)
+    (6,6);(0,1)
+    (6,0);(3,0)
+    (1,0);(20,0)
+    (6,4);(12,0)
+    (6,4);(9,0)
+    (6,3);(14,0)
+    (6,3);(8,1)
+    (15,0);(11,0)
+    (15,0);(8,0)
+    (6,5);(7,0)
+    (6,5);(1,0)
+    (6,1);(15,0)
+    (6,1);(18,0)
+    (1,0);(6,0)
+    (1,0);(19,0)
+    (6,1);(16,0)
+    (6,1);(0,1)
+    (1,1);(17,0)
+    (1,1);(20,1)
+    (1,1);(6,4)
+    (9,0);(20,2)
+    (9,0);(6,3)
+    (9,0);(13,0)
+    (20,0);(24,0)
+    (20,0);(21,0)
+    (20,2);(26,0)
+    (20,2);(23,0)
+    (20,1);(25,0)
+    (20,1);(22,0)
+   }
+ }

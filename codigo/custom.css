@@ -1,0 +1,79 @@
+/* --- HEADER DE DOXYGEN (LOGO DE CABECERA) --- */
+#projectlogo img {
+  max-height: 60px;
+  height: auto;
+  width: auto;
+}
+
+
+/* --- BLOQUE INICIAL DE PRESENTACIÓN (centrado con logos e info UNRC) --- */
+.intro-block {
+  text-align: center;
+  margin-top: 1.5em;
+  margin-bottom: 2em;
+  padding: 0 1em;
+}
+
+.intro-block img {
+  max-height: 90px;
+  height: auto;
+  width: auto;
+  margin: 0 12px;
+  vertical-align: middle;
+}
+
+.intro-block p {
+  font-size: 1.1em;
+  color: #333;
+  margin: 0.3em 0;
+  line-height: 1.6;
+}
+
+
+/* --- TITULO PRINCIPAL (README o Main Page) --- */
+.contents h1 {
+  font-size: 2em;
+  margin-top: 0.3em;
+  margin-bottom: 0.6em;
+  font-weight: 600;
+  color: #2b2b2b;
+}
+
+/* --- HR EN README (para separar secciones) --- */
+.contents hr {
+  border: 0;
+  height: 1px;
+  background: #ccc;
+  margin: 1.5em auto;
+  width: 60%;
+}
+
+
+/* --- GENERAL PARA TABLAS DEL README --- */
+.contents table {
+  margin: 1em auto;
+  border-collapse: collapse;
+  width: 90%;
+  max-width: 800px;
+}
+
+.contents table th,
+.contents table td {
+  border: 1px solid #ddd;
+  padding: 0.6em;
+  text-align: left;
+}
+
+.contents table th {
+  background-color: #f5f5f5;
+  font-weight: bold;
+}
+
+
+/* --- RESTO DEL CONTENIDO (sin afectar el centrado normal) --- */
+.contents {
+  font-family: 'Segoe UI', sans-serif;
+  color: #222;
+  line-height: 1.6;
+  padding: 1em;
+}
