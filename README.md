@@ -18,9 +18,10 @@ El modelo está compuesto por distintos DEVS atómicos que simulan:
 
 ## ⚙️ Modificación de parámetros
 
-Podés modificar los **parámetros del sistema** directamente desde el archivo `estacionamiento.pdm` usando el editor gráfico de PowerDEVS. Algunos parámetros ajustables son:
+Podés modificar los **parámetros del sistema** directamente desde el archivo `estacionamiento.pdm` o usando el editor gráfico de PowerDEVS. Algunos parámetros ajustables son:
 
 - Capacidad máxima del estacionamiento.
+- Tiempo de latencia para sensar un vehículo.
 - Tiempos de apertura y cierre de barreras.
 - Distribución de llegadas.
 - Tiempos máximos de permanencia.
@@ -32,7 +33,7 @@ Podés modificar los **parámetros del sistema** directamente desde el archivo `
 ## ▶️ Cómo ejecutar la simulación
 
 1. **Abrí PowerDEVS.**
-2. Seleccioná `Archivo > Abrir...` y cargá `estacionamiento.pdm`.
+2. Seleccioná `Archivo > Abrir...` y cargá `estacionamiento_inteligente.pdm`.
 3. Presioná el botón de **simulate** para compilar y ejecutar.
 4. Los resultados estarán disponibles como gráficos y/o archivos `.csv`.
 
