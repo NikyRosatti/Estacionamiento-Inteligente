@@ -43,6 +43,18 @@ Podés modificar los **parámetros del sistema** directamente desde el archivo `
 
 Este repositorio incluye un archivo `Doxyfile` para generar la documentación técnica del código fuente en C++.
 
+Es necesario instalarlo para que se pueda generar la documentación automáticamente.
+
+#### Windows
+Se puede descargar e instalar siguiendo la página oficial: http://www.doxygen.nl/download.html
+
+#### Linux
+Corriendo lo siguientes comandos via terminal se puede instalar Doxygen
+```bash
+sudo apt update
+sudo apt install doxygen
+```
+
 ### 🛠 Cómo generar la documentación:
 
 ```bash
