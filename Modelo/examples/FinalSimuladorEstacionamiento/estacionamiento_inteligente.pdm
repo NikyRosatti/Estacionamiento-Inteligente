@@ -405,7 +405,7 @@ Coupled
             Parameters
                 {
                 Inputs = Str; %Inputs ; Number of inputs
-                Format = Str; set xrange [0:%tf] @ set grid @ set title 'Ocupacion Promedio' @ set xlabel 'Tiempo (t)' @ set ylabel 'Cantidad de autos' ; General Formatting (use @ as line break)
+                Format = Str; set xrange [0:%tf] @ set grid @ set title 'Ocupacion Promedio' @ set xlabel 'Tiempo (t)' @ set ylabel 'Ocupacion promedio' ; General Formatting (use @ as line break)
                 Format1 = Str; with lines title 'Ocupacion Promedio' ; Formatting options for input 1
                 Format2 = Str;  ; Formatting options for input 2
                 Format3 = Str;  ; Formatting options for input 3
