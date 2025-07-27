@@ -18,7 +18,7 @@ El modelo está compuesto por distintos DEVS atómicos que simulan:
 
 ## ⚙️ Modificación de parámetros
 
-Podés modificar los **parámetros del sistema** directamente desde el archivo `estacionamiento.pdm` o usando el editor gráfico de PowerDEVS. Algunos parámetros ajustables son:
+Podés modificar los **parámetros del sistema** directamente desde el archivo `estacionamiento_inteligente.pdm` o usando el editor gráfico de PowerDEVS. Algunos parámetros ajustables son:
 
 - Capacidad máxima del estacionamiento.
 - Tiempo de latencia para sensar un vehículo.
@@ -29,6 +29,21 @@ Podés modificar los **parámetros del sistema** directamente desde el archivo `
 > ✏️ Estos valores pueden ser cambiados para experimentar con diferentes escenarios de tráfico o configuraciones del sistema.
 
 ---
+
+## 🔩 Cómo preparar los archivos para la simulación
+
+1. Abrí la carpeta donde está instalado PowerDEVS
+2. Copiar la carpeta _**atomics**_ que se encuentra dentro de la carpeta **Codigo** de este .zip
+3. Pegar la carpeta _**atomics**_ dentro de PowerDEVS y si pide reemplazar darle que sí (nuestro código tiene un nombre único de carpeta de los que vienen por defecto en PowerDEVS, por lo que no pisamos ningún archivo original).
+4. Copiar la carpeta _**examples**_ que se encuentra dentro de la carpeta **Modelo** de este .zip
+5. Pegar la carpeta _**examples**_ dentro de PowerDEVS y si pide reemplazar darle que sí (nuestro modelo tiene un nombre único de carpeta de los que vienen por defecto en PowerDEVS, por lo que no pisamos ningún archivo original).
+
+Si todo salió bien, la carpeta **atomics** de PowerDEVS debe verse algo así:
+![carpeta_atomics_powerdevs_con_codigo_puesto](image.png)
+
+Y la carpeta **examples** de PowerDEVS debe verse algo así:
+![carpeta_examples_powerdevs_con_modelo_puesto](image-1.png)
+
 
 ## ▶️ Cómo ejecutar la simulación
 
