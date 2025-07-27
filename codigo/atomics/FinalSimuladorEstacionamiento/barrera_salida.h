@@ -14,8 +14,8 @@ class barrera_salida : public Simulator
 
 	double pat; // Patente actual procesada por el dev
 
-	double tiempo_apertura;
-	double tiempo_cierre;
+	double tiempo_apertura;	// Tiempo que tarda en abrirse la barrera
+	double tiempo_cierre;	// Tiempo que tarda en cerrarse la barrera
 
 	std::mt19937 engine_;						  // Variable motor para la distribución uniforme
 	std::uniform_real_distribution<double> dist_; // Variable de la distribución uniforme

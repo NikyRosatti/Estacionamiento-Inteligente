@@ -44,7 +44,7 @@ void monitor::init(double t, ...)
     propiedad_liveness_1 = true; // todo auto entro & salio, al inicio true
     sigma = infinito;
 
-    csv.open("zzCSVMano_Monitor_Liveness.csv", std::ios::out | std::ios::trunc);
+    csv.open("CSV_Monitor_Liveness.csv", std::ios::out | std::ios::trunc);
 }
 
 /**
@@ -202,7 +202,7 @@ Event monitor::lambda(double t)
 void monitor::exit()
 {
     csv.close();
-    csv.open("CSVMano_Monitor_Propiedades.csv", std::ios::out | std::ios::trunc);
+    csv.open("Exit_Monitor_Propiedades.csv", std::ios::out | std::ios::trunc);
     csv << "propiedad safety cumplida: " << propiedad_safety << "\n";
     csv << "propiedad liveness_1 cumplida: " << propiedad_liveness_1 << "\n";
     csv.close();

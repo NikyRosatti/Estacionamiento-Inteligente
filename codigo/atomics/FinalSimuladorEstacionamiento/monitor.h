@@ -19,8 +19,8 @@ class monitor : public Simulator
 	std::vector<double> tiempos_entrada; // Lista de patentes con su tiempo de entrada al estacionamiento
 	std::vector<double> tiempos_salida;	 // Lista de patentes con su tiempo de salida del estacionamiento
 
-	std::vector<double> autos_entrantes;
-	std::vector<double> autos_salientes;
+	std::vector<double> autos_entrantes; // Lista de patentes que entran
+	std::vector<double> autos_salientes; // Lista de patentes que salen
 
 	std::vector<std::pair<double, bool>> lista_par_patentes_estado_sistema; // Lista de pares: patente estado(admitida, rechazada) que pasaron por el sistema
 

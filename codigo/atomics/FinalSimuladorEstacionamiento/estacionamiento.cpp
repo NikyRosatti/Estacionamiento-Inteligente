@@ -26,7 +26,7 @@ void estacionamiento::init(double t, ...)
     engine_.seed(static_cast<unsigned int>(seed));
     dist_ = std::uniform_real_distribution<double>(a, b);
 
-    csv.open("zzCSVMano_estacionamientoPasoPaso.csv", std::ios::out | std::ios::trunc);
+    csv.open("CSV_Estacionamiento_PasoPaso.csv", std::ios::out | std::ios::trunc);
     csv << "semilla= " << seed << "\n";
     csv << "a= " << a << "\n";
     csv << "b= " << b << "\n";
@@ -134,7 +134,7 @@ Event estacionamiento::lambda(double t)
 void estacionamiento::exit()
 {
     csv.close();
-    csv_exit.open("CSVMano_Estacionamiento_Propiedades.csv", std::ios::out | std::ios::trunc);
+    csv_exit.open("Exit_Estacionamiento_Propiedades.csv", std::ios::out | std::ios::trunc);
     csv_exit << "quedaron: " << cola_prioridad.size() << " autos en el estacionamiento despues de que terminara por tiempo la simulacion" << "\n";
     csv_exit.close();
 }

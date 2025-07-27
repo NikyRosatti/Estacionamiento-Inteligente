@@ -68,17 +68,17 @@ Root-Coordinator
   Simulator
    {
     Path = sinks/to_disk.h
-    Parameters = "zz_tiempo_prom_permanencia.csv"
+    Parameters = "estadistico_tiempo_prom_permanencia.csv"
    }
   Simulator
    {
     Path = sinks/to_disk.h
-    Parameters = "zz_tasa_rechazo.csv"
+    Parameters = "estadistico_tasa_rechazo.csv"
    }
   Simulator
    {
     Path = sinks/to_disk.h
-    Parameters = "zz_ocupacion_promedio.csv"
+    Parameters = "estadistico_ocupacion_promedio.csv"
    }
   Simulator
    {
@@ -93,7 +93,7 @@ Root-Coordinator
   Simulator
    {
     Path = sinks/gnuplot.h
-    Parameters = 1.000000e+00,"set xrange [0:%tf] @ set grid @ set title 'Ocupacion Promedio' @ set xlabel 'Tiempo (t)' @ set ylabel 'Ocupacion Promedio'","with lines title 'Ocupacion Promedio'","","","",""
+    Parameters = 1.000000e+00,"set xrange [0:%tf] @ set grid @ set title 'Ocupacion Promedio' @ set xlabel 'Tiempo (t)' @ set ylabel 'Ocupacion promedio'","with lines title 'Ocupacion Promedio'","","","",""
    }
   EIC
    {

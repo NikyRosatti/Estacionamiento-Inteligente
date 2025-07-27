@@ -33,7 +33,7 @@ void sensor_entrada::init(double t, ...)
 	// Puerto de salida
 	DETECTAR_VEHICULO = 0;
 
-    csv.open("CSVMano_sensorEntradaCola.csv", std::ios::out | std::ios::trunc);
+    csv.open("CSV_SensorEntrada_Cola.csv", std::ios::out | std::ios::trunc);
 
     sigma = infinito;
 }
@@ -183,7 +183,7 @@ Event sensor_entrada::lambda(double t)
 void sensor_entrada::exit()
 {
     csv.close();
-    csv_exit.open("zzCSVMano_sensorEntradaFin.csv", std::ios::out | std::ios::trunc);
+    csv_exit.open("Exit_SensorEntrada.csv", std::ios::out | std::ios::trunc);
     csv_exit << "quedaron " << cola.size() << " autos esperando en el sensor despues del tiempo final simulacion \n";
     csv_exit.close();
 }

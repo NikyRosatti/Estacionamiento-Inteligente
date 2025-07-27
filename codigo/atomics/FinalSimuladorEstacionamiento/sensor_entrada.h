@@ -23,7 +23,7 @@ class sensor_entrada : public Simulator
 	bool procesando;	 // Flag para saber si el sensor está procesando un auto
 	bool fin_simulacion; // Flag para saber si termino la simulacion
 
-	float TIEMPO_MAX_ENTRADA_VEHICULOS;	// Constante que indica cuánto tiempo tienen los autos permitido para entrar
+	double TIEMPO_MAX_ENTRADA_VEHICULOS;	// Constante que indica cuánto tiempo tienen los autos permitido para entrar
 
 	std::queue<double> cola; // Cola de autos con disciplina FIFO
 

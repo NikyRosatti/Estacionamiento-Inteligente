@@ -48,7 +48,7 @@ void controlador::init(double t, ...)
     VOLVER_A_SENSAR_ENTRADA = 6;
 
     // Apertura de archivo CSV para log de pasos
-    csv.open("CSVMano_controladorPasoPaso.csv", std::ios::out | std::ios::trunc);
+    csv.open("CSV_Controlador_PasoPaso.csv", std::ios::out | std::ios::trunc);
     csv << "Tiempo inicial: " << sigma << "\n";
     csv << "Cant Autos Est: " << cant_autos << "\n";
 }
@@ -228,7 +228,7 @@ Event controlador::lambda(double t)
 void controlador::exit()
 {
     csv.close();
-    csv_exit.open("CSVMano_Controlador_Propiedades.csv", std::ios::out | std::ios::trunc);
+    csv_exit.open("Exit_Controlador_Propiedades.csv", std::ios::out | std::ios::trunc);
     csv_exit << "quedaron: " << cant_autos << " autos en el estacionamiento despues de que terminara por tiempo la simulacion" << "\n";
     csv_exit.close();
 }

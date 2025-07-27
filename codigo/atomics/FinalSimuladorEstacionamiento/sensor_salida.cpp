@@ -29,7 +29,7 @@ void sensor_salida::init(double t, ...)
 	// Puerto de salida
 	SOLICITAR_SALIDA = 0;
 
-    csv.open("CSVMano_sensorSalidaCola.csv", std::ios::out | std::ios::trunc);
+    csv.open("CSV_SensorSalida_Cola.csv", std::ios::out | std::ios::trunc);
 
     sigma = infinito;
 }

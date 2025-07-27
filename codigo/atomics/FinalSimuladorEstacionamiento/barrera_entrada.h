@@ -15,9 +15,9 @@ class barrera_entrada : public Simulator
 	double pat;		// Patente actual procesada por el dev
 	bool rechazado; // Flag de auto rechazado
 
-	double tiempo_apertura;
-	double tiempo_cierre;
-	double tiempo_retiro;
+	double tiempo_apertura;	// Tiempo que tarda en abrirse la barrera
+	double tiempo_cierre;	// Tiempo que tarda en cerrarse la barrera
+	double tiempo_retiro;	// Tiempo que tarda en retirarse un vehículo rechazado de la barrera
 
 	std::mt19937 engine_;						  // Variable motor para la distribución uniforme
 	std::uniform_real_distribution<double> dist_; // Variable de la distribución uniforme

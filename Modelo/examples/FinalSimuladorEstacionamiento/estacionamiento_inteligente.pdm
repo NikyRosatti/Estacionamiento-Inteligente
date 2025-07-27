@@ -297,7 +297,7 @@ Coupled
                 }
             Parameters
                 {
-                File = Str; zz_tiempo_prom_permanencia.csv ; file name
+                File = Str; estadistico_tiempo_prom_permanencia.csv ; file name
                 }
             }
         Atomic
@@ -316,7 +316,7 @@ Coupled
                 }
             Parameters
                 {
-                File = Str; zz_tasa_rechazo.csv ; file name
+                File = Str; estadistico_tasa_rechazo.csv ; file name
                 }
             }
         Atomic
@@ -335,7 +335,7 @@ Coupled
                 }
             Parameters
                 {
-                File = Str; zz_ocupacion_promedio.csv ; file name
+                File = Str; estadistico_ocupacion_promedio.csv ; file name
                 }
             }
         Atomic

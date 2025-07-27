@@ -9,7 +9,7 @@
 #include "fstream"
 
 #include <queue>
-#include <functional> // para std::greater si necesitas min-heap
+#include <functional> // para std::greater
 #include <vector>	  // para std::vector
 #include <utility>	  // para std::pair
 #include <limits>
