@@ -1,0 +1,1981 @@
+
+\documentclass[12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{amsmath, amssymb}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage{enumitem}
+\usepackage{graphicx}
+\usepackage[most]{tcolorbox}
+\tcbuselibrary{listingsutf8}
+\geometry{margin=2.5cm}
+
+\title{\textbf{Estacionamiento Inteligente con Control de Acceso Automatizado}}
+\author{Nicolle Rosatti \\ Joaquín Tissera \\ \\
+\textbf{Profesor:} Ariel Gonzalez \\
+\textbf{Materia:} Simulación (Cód. 1962) \\
+\vspace{0.5cm}
+Universidad Nacional de Río Cuarto \\
+Facultad de Ciencias Exactas Físico-Químicas y Naturales \\
+Licenciatura en Ciencias de la Computación \\
+2025
+}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+El presente trabajo aborda el modelado y simulación de un sistema automatizado de control de acceso vehicular a un estacionamiento con capacidad limitada. El objetivo principal es garantizar un funcionamiento eficiente y seguro del sistema, evitando el ingreso de vehículos cuando se alcanza la capacidad máxima y asegurando que todo vehículo que ingrese pueda salir sin conflictos operativos.
+
+Para ello, se implementa una lógica de control basada en sensores, barreras automáticas y un controlador central, respetando propiedades fundamentales como \textit{Safety} (seguridad) y \textit{Liveness} (vivacidad). Además, se analizan métricas clave de rendimiento tales como el tiempo medio de permanencia de los vehículos, la tasa de rechazo por falta de espacio, y el porcentaje de ocupación promedio del estacionamiento.
+\end{abstract}
+
+
+\tableofcontents
+
+\section{Introducción}
+
+\subsection{Contexto y motivación}
+Necesidad de simular sistemas de acceso a estacionamientos automatizados.
+
+\subsection{Objetivos}
+\begin{itemize}
+    \item Modelar el sistema en CML‐DEVS.
+    \item Verificar propiedades de \textit{safety} y \textit{liveness}.
+    \item Medir métricas clave: ocupación, rechazos, tiempo de estancia.
+\end{itemize}
+
+
+\section{Descripción del sistema}
+
+\subsection{Descripción Funcional}
+
+El sistema simula el comportamiento de un estacionamiento automatizado con acceso controlado. A continuación se describe el flujo típico de un vehículo:
+\begin{enumerate}
+    \item \textbf{Llegada al sistema:} los vehículos arriban de forma estocástica. El tiempo entre llegadas sigue una distribución exponencial con media de 10 segundos, simulando condiciones de tráfico variable.
+    
+    \item \textbf{Detección en el sensor de entrada:}
+    \begin{enumerate}
+        \item Si no hay vehículos en espera, el vehículo es detectado tras una latencia fija de 1 segundo.
+        \item Si hay vehículos esperando ingresar, el nuevo vehículo se encola en la fila de espera del sensor.
+    \end{enumerate}
+    El sensor notificará al controlador cuando se haya terminado de sensar un vehículo.
+
+    \item \textbf{Decisión de ingreso:} el controlador evalúa si la ocupación del estacionamiento permite un nuevo ingreso. Puede:
+    \begin{itemize}
+    \item \textbf{Admitir:}
+    \begin{itemize}[label=--]
+        \item \textbf{AdmitidosDirecto:} se autoriza el ingreso del vehículo inmediatamente.
+        \item \textbf{AdmitidosConDemora:} el vehículo permanece en espera durante un máximo de 3 segundos, aguardando que se libere un lugar en el estacionamiento. Si se libera una plaza en ese lapso, se le permite ingresar; de lo contrario, es rechazado.
+    \end{itemize}
+    \item \textbf{Rechazar:} el vehículo se retira de la barrera y del sistema en un tiempo de 2 segundos.
+    \end{itemize}
+
+    \item \textbf{Proceso de ingreso (si fue aceptado):}
+    \begin{enumerate}
+        \item La barrera de entrada tarda 4 segundos en abrirse.
+        \item El vehículo cruza en un tiempo aleatorio (siguiendo una distribución uniforme) entre 1 y 3 segundos.
+        \item La barrera tarda 4 segundos en cerrarse.
+        \item Se registra el evento \texttt{vehiculoHaIngresado} al finalizar el cruce, se notifica al controlador.
+    \end{enumerate}
+
+    \item \textbf{Permanencia en el estacionamiento:} el vehículo permanece dentro durante un tiempo aleatorio entre 120 y 300 segundos (con una distribución uniforme), simulando su estadía.
+
+    \item \textbf{Salida del sistema:} Una vez cumplido el tiempo de permanencia dentro del estacionamiento, el auto desea retirarse.
+    \begin{enumerate}
+        \item El vehículo llega al sensor de salida, que lo detecta con una latencia fija de 1 segundo.
+        \item Si la barrera aún no está cerrada por completo o hay otro vehículo saliendo, se encola y espera.
+        \item El sensor de salida notifica al controlador cuando hay un vehículo esperando egresar.
+        \item A diferencia de la entrada, si no hay obstrucción, la salida es autorizada inmediatamente por el controlador.
+    \end{enumerate}
+
+    \item \textbf{Proceso de egreso:}
+    \begin{enumerate}
+        \item La barrera de salida tarda 4 segundos en abrirse.
+        \item El vehículo cruza en un tiempo aleatorio uniforme entre 1 y 3 segundos.
+        \item La barrera tarda 4 segundos en cerrarse.
+        \item Se registra el evento \texttt{vehiculoHaSalido}.
+    \end{enumerate}
+
+    \item \textbf{Restricción importante:} solo un vehículo puede cruzar la barrera de entrada/salida a la vez (y existe una de entrada y otra distinta de salida, son independientes). Las solicitudes concurrentes son manejadas secuencialmente mediante una cola.
+\end{enumerate}
+
+
+\subsection{Formalismo DEVS y CML‐DEVS}
+
+El sistema fue modelado utilizando el formalismo DEVS (Discrete Event System Specification) y su variante textual CML-DEVS. Se diseñaron modelos atómicos para representar los componentes individuales del sistema y un modelo acoplado para definir la interacción entre ellos. Cada modelo atómico contiene sus propios puertos de entrada y salida, variables de estado y funciones de transición interna, externa y de salida.
+
+\subsection{Propiedades de interés}
+
+El sistema debe cumplir con dos propiedades fundamentales:
+
+\begin{itemize}
+    \item \textbf{Safety:} la ocupación del estacionamiento nunca debe superar la capacidad máxima definida (\(K = 30\)). Esta propiedad garantiza que no ingresen más vehículos de los que pueden ser alojados.
+    
+    \item \textbf{Liveness 1:} todo vehículo admitido debe eventualmente egresar. Esto implica que no deben quedar autos eternamente bloqueados dentro del estacionamiento y permite verificar que el flujo de entrada y salida se mantenga operativo.
+    \item \textbf{Liveness 2:} todo vehículo que ha ingresado no puede estar más del 1\% del tiempo que estuvo estacionado para salir de la zona de estacionamiento. Es decir, si un vehículo estuvo 60 minutos estacionado, no puede tardar más de 0{,}6 minutos en salir. Esta demora puede deberse, por ejemplo, a la cola de salida.
+\end{itemize}
+
+\subsection{Requisitos Técnicos}
+
+\begin{itemize}
+    \item \textbf{Capacidad máxima del estacionamiento:} \(K = 30\) vehículos.
+    \item \textbf{Tiempos de procesamiento:} sensores con latencia de 1 segundo; barreras con apertura y cierre de 4 segundos cada uno; cruce de vehículos modelado como una variable aleatoria uniforme entre 1 y 3 segundos.
+    \item \textbf{Tiempo de permanencia:} modelado mediante una distribución uniforme entre 120 y 300 segundos.
+    \item \textbf{Supuestos operativos:}
+    \begin{itemize}
+        \item Los vehículos llegan de forma independiente (tiempo entre arribos exponencial).
+        \item Los vehículos no retroceden ni cancelan su intención de ingreso.
+        \item No existen fallas en sensores o barreras.
+    \end{itemize}
+\end{itemize}
+
+\subsection{Componentes Modelados}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|l|p{8cm}|}
+\hline
+\textbf{Componente} & \textbf{Tipo DEVS} & \textbf{Función} \\ \hline
+Generador Aleatorio      & Atómico            & Genera los arribos de los autos con una distribución exponencial con media 10. \\ \hline
+Sensor de Entrada      & Atómico            & Detecta la presencia de vehículos y activa el controlador. \\ \hline
+Barrera de Entrada     & Atómico            & Controla físicamente el ingreso de vehículos al estacionamiento. \\ \hline
+Controlador    & Atómico & Coordina decisiones de admisión basadas en la ocupación actual y autoriza el egreso inmediato del estacionamiento. \\ \hline
+Estacionamiento        & Atómico            & Gestiona el tiempo de permanencia \\ \hline
+Sensor de Salida       & Atómico            & Detecta los vehículos que desean salir. \\ \hline
+Barrera de Salida      & Atómico            & Permite el egreso de vehículos una vez autorizados. \\ \hline
+Monitor     & Atómico            & Contiene y realiza todas las estadisticas necesarias del sistema. \\ \hline
+\end{tabular}
+\caption{Componentes modelados del sistema de estacionamiento inteligente.}
+\end{table}
+
+\subsection{Resumen de parámetros temporales}
+
+\begin{table}[h!]
+\centering
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Parámetro}              & \textbf{Valor sugerido}                                \\ \hline
+Capacidad máxima (N)           & 30 vehículos                                           \\ \hline
+Llegadas (interarribos)        & Exponencial con media 10 s                             \\ \hline
+Sensor de entrada              & 1 s de latencia                                        \\ \hline
+Decisión del controlador       & Hasta 3 s                                              \\ \hline
+Apertura de barrera            & 4 s                                                    \\ \hline
+Cruce del vehículo             & Uniforme entre 1 y 3 s                                 \\ \hline
+Cierre de barrera              & 4 s                                                    \\ \hline
+Tiempo de retiro               & 2 s (si no se permite el ingreso)                      \\ \hline
+Permanencia                    & Uniforme entre 120 y 300 s                             \\ \hline
+Sensor de salida               & 1 s de latencia                                        \\ \hline
+\end{tabular}
+\caption{Resumen de parámetros temporales utilizados en la simulación}
+\label{tab:resumen-parametros}
+\end{table}
+
+\clearpage
+
+\section{Especificación CML‑DEVS de los Modelos Atómicos}
+
+\subsection{Diagrama de caja de cada modelo atómico (inputs/outputs)}
+
+% FIGURA 1
+\begin{figure}[h!]
+    \centering
+    \begin{minipage}{0.45\textwidth}
+        \includegraphics[width=\linewidth]{GenAleatorio.png}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.5\textwidth}
+        \small
+        \textbf{Entradas:}
+        \begin{itemize}
+            \item Ninguna (generador).
+        \end{itemize}
+        \textbf{Salidas:}
+        \begin{itemize}
+            \item \texttt{patenteVehiculo} (Puerto 0) (número identificador del vehículo que llega).
+        \end{itemize}
+    \end{minipage}
+    \caption{Dev del generador de arribos de los autos}
+    \label{fig:gen-arribos}
+\end{figure}
+
+% FIGURA 2
+\begin{figure}[h!]
+    \centering
+    \begin{minipage}{0.45\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{sensorEntrada.png}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.5\textwidth}
+        \raggedright
+        \small
+        \textbf{Entradas:}
+        \begin{itemize}
+            \item \texttt{patenteVehiculo} (Puerto 0)
+            \item \texttt{vehiculoHaIngresado}, \texttt{vehiculoRechazado} (Puerto 1; puede volver a sensar)
+        \end{itemize}
+        \textbf{Salidas:}
+        \begin{itemize}
+            \item \texttt{detectarVehiculo}
+        \end{itemize}
+    \end{minipage}
+    \caption{Componente \texttt{SensorEntrada}}
+    \label{fig:sensor-entrada}
+\end{figure}
+
+% FIGURA 3
+\begin{figure}[h!]
+    \centering
+    \begin{minipage}{0.45\textwidth}
+        \includegraphics[width=\linewidth]{sensorSalida.png}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.5\textwidth}
+        \small
+        \textbf{Entradas:}
+        \begin{itemize}
+            \item \texttt{vehiculoQuiereSalir} (Puerto 0)
+            \item \texttt{vehiculoHaSalido} (Puerto 1; puede volver a sensar)
+        \end{itemize}
+        \textbf{Salidas:}
+        \begin{itemize}
+            \item \texttt{solicitarSalida} (Puerto 0)
+        \end{itemize}
+    \end{minipage}
+    \caption{Componente \texttt{SensorSalida}}
+    \label{fig:gen-arribos}
+\end{figure}
+
+% FIGURA 4
+\begin{figure}[h!]
+    \centering
+    \begin{minipage}{0.4\textwidth}
+        \includegraphics[width=\linewidth]{controlador.png}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.5\textwidth}
+        \scriptsize
+        \small
+        \textbf{Entradas:}
+        \begin{itemize}
+            \item \texttt{DETECTAR\_VEHICULO} (puerto 0): auto quiere ingresar.
+            \item \texttt{VEHICULO\_HA\_INGRESADO} (puerto 1): auto finaliza cruce de barrera.
+            \item \texttt{SOLICITAR\_SALIDA} (puerto 2): auto quiere salir.
+            \item \texttt{VEHICULO\_HA\_SALIDO} (puerto 3): auto finaliza cruce de barrera de salida.
+            \item \texttt{RECHAZADOS} (puerto 4): auto se retira tras ser rechazado.
+        \end{itemize}
+        \textbf{Salidas:}
+        \begin{itemize}
+            \item \texttt{ENTRADA\_ESTACIONAMIENTO\_Y\_VOLVER\_SENSAR\_ENTRADA}
+            \item \texttt{PERMITIR\_ENTRADA\_BARRERA\_DIRECTO}
+            \item \texttt{DENEGAR\_ENTRADA}
+            \item \texttt{PERMITIR\_SALIDA}
+            \item \texttt{VOLVER\_A\_SENSAR\_SALIDA}
+            \item \texttt{ENTRADA\_BARRERA\_DEMORA\_Y\_VOLVER\_SENSAR\_SALIDA}
+            \item \texttt{VOLVER\_A\_SENSAR\_ENTRADA}
+            \item \texttt{BLOQUEAR\_SENSOR\_ENTRADA\_FIN\_SIMULACION}
+        \end{itemize}
+    \end{minipage}
+    \caption{Componente \texttt{Controlador}: gestiona la lógica de ingreso y egreso según el estado del sistema.}
+    \label{fig:controlador}
+\end{figure}
+
+% FIGURA 5
+\begin{figure}[h!]
+    \centering
+    \begin{minipage}{0.4\textwidth}
+        \includegraphics[width=\linewidth]{barrera_entrada.png}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.5\textwidth}
+        \scriptsize
+        \small
+        \textbf{Entradas:}
+        \begin{itemize}
+            \item \texttt{PERMITIR\_ENTRADA} (Puerto 0): un auto debe ingresar.
+            \item \texttt{DENEGAR\_ENTRADA} (Puerto 1): un auto se debe retirar de la barrera.
+        \end{itemize}
+        \textbf{Salidas:}
+        \begin{itemize}
+            \item \texttt{VEHICULO\_HA\_INGRESADO} (Puerto 0): un auto ingresado completó su paso por la barrera.
+            \item \texttt{VEHICULO\_RECHAZADO\_SE\_HA\_RETIRADO} (Puerto 1): un auto rechazado completó su paso por la barrera.
+        \end{itemize}
+    \end{minipage}
+    \caption{Componente \texttt{BarreraEntrada}: aplica una latencia para autos que ingresan o son rechazados previo a estacionarse.}
+    \label{fig:controlador}
+\end{figure}
+
+% FIGURA 6
+\begin{figure}[h!]
+    \centering
+    \begin{minipage}{0.4\textwidth}
+        \includegraphics[width=\linewidth]{barrera_salida.png}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.5\textwidth}
+        \scriptsize
+        \small
+        \textbf{Entradas:}
+        \begin{itemize}
+            \item \texttt{PERMITIR\_SALIDA} (Puerto 0): un auto debe salir.
+        \end{itemize}
+        \textbf{Salidas:}
+        \begin{itemize}
+            \item \texttt{VEHICULO\_HA\_SALIDO} (Puerto 0): un auto que sale completó su paso por la barrera.
+        \end{itemize}
+    \end{minipage}
+    \caption{Componente \texttt{BarreraSalida}: aplica una latencia para autos que salen del estacionamiento.}
+    \label{fig:controlador}
+\end{figure}
+
+% FIGURA 7
+\begin{figure}[h!]
+    \centering
+    \begin{minipage}{0.4\textwidth}
+        \includegraphics[width=\linewidth]{estacionamiento.png}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.5\textwidth}
+        \scriptsize
+        \small
+        \textbf{Entradas:}
+        \begin{itemize}
+            \item \texttt{PERMITIR\_ENTRADA} (Puerto 0): un auto ingresa al estacionamiento.
+        \end{itemize}
+        \textbf{Salidas:}
+        \begin{itemize}
+            \item \texttt{VEHICULO\_QUIERE\_SALIR} (Puerto 0): un auto completó su duración de permanencia en el estacionamiento.
+        \end{itemize}
+    \end{minipage}
+    \caption{Componente \texttt{Estacionamiento}: define una permanencia para autos se estacionan, siguiendo una distribución uniforme parametrizada.}
+    \label{fig:controlador}
+\end{figure}
+
+% FIGURA 8
+\begin{figure}[h!]
+    \centering
+    \begin{minipage}{0.4\textwidth}
+        \includegraphics[width=\linewidth]{monitor.png}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.5\textwidth}
+        \scriptsize
+        \small
+        \textbf{Entradas:}
+        \begin{itemize}
+            \item \texttt{BARRERA\_ENTRADA\_ADMITIDOS} (Puerto 0): los autos admitidos para estacionarse.
+            \item \texttt{BARRERA\_ENTRADA\_RECHAZADOS} (Puerto 1): los autos rechazados para estacionarse.
+            \item \texttt{BARRERA\_SALIDA\_EGRESO\_ABSOLUTO} (Puerto 2): los autos que se retiraron definitivamente del sistema.
+        \end{itemize}
+        \textbf{Salidas:}
+        \begin{itemize}
+            \item \texttt{TIEMPO\_PROMEDIO\_PERMANENCIA} (Puerto 0): el estadístico ya calculado de tiempo promedio de permanencia.
+            \item \texttt{TASA\_DE\_RECHAZO} (Puerto 1): el estadístico ya calculado de tasa de rechazo.
+            \item \texttt{OCUPACION\_PROMEDIO} (Puerto 2): el estadístico ya calculado de ocupación promedio.
+        \end{itemize}
+    \end{minipage}
+    \caption{Componente \texttt{Monitor}: calcula de manera pasiva los estadísticos de tiempo promedio permanencia, tasa de rechazo y ocupación promedio. Sus salidas se almacenan en disco y son dadas a GNUPlot para graficarlas como corresponde.}
+    \label{fig:controlador}
+\end{figure}
+
+\clearpage
+
+\subsection{Especificación CML-DEVS (Conceptual Modeling Language - Discrete Event System Specification)}
+
+\subsubsection{GeneradorArribos}
+
+\begin{tcolorbox}[
+    colback=black!5!white,
+    colframe=black!80!white,
+    boxrule=0.8pt,
+    arc=2pt,
+    left=5pt,
+    right=5pt,
+    top=5pt,
+    bottom=5pt,
+    fontupper=\ttfamily,
+    breakable
+]
+\begin{flushleft}
+\texttt{atomic generador\_arribos <S, $S_0$, Y, }$\delta_{int}$\texttt{, }$\lambda$\texttt{, ta>}\texttt{ is}
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{~~~~S is} \\
+\texttt{~~~~~~~~}$\sigma$\texttt{ : }\(\mathbb{R}\)\texttt{;} \\
+\texttt{~~~~~~~~pat : }\(\mathbb{N}\)\texttt{;} \\
+\texttt{~~~~end S}
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{~~~~$S_0$ (pat, }$\sigma$\texttt{)} \\
+\texttt{~~~~~~~~pat = 1;} \\
+\texttt{~~~~~~~~}$\sigma$\texttt{ = }$\infty$\texttt{;} \\
+\texttt{~~~~end $S_0$}
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{~~~~Y is} \\
+\texttt{~~~~~~~~patenteVehiculo\_0 : }\(\mathbb{N}\)\texttt{;} \\
+\texttt{~~~~end Y}
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{~~~~}$\delta_{int}$\texttt{(pat, }$\sigma$\texttt{) is} \\
+\texttt{~~~~~~~~pat = pat + 1;} \\
+\texttt{~~~~~~~~}$\sigma$\texttt{ = Exponencial(seed = 3, mean = 1/10);} \\
+\texttt{~~~~end }$\delta_{int}$
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{~~~~}$\lambda$\texttt{(pat, }$\sigma$\texttt{) is} \\
+\texttt{~~~~~~~~patenteVehiculo\_0 = pat;} \\
+\texttt{~~~~end }$\lambda$
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{~~~~ta(pat, }$\sigma$\texttt{) is} \\
+\texttt{~~~~~~~~}$\sigma$ \\
+\texttt{~~~~end ta}
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{end atomic}
+\end{flushleft}
+\end{tcolorbox}
+
+
+\subsubsection{SensorEntrada}
+
+\begin{tcolorbox}[
+    colback=black!5!white,
+    colframe=black!80!white,
+    boxrule=0.8pt,
+    arc=2pt,
+    left=5pt,
+    right=5pt,
+    top=5pt,
+    bottom=5pt,
+    fontupper=\ttfamily,
+    breakable
+]
+\begin{flushleft}
+\texttt{atomic sensor\_entrada <X, S, $S_0$, Y, }$\delta_{int}$\texttt{, }$\delta_{ext}$\texttt{, }$\lambda$\texttt{, ta> is}
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{~~~~X is} \\
+\texttt{~~~~~~~~patenteVehiculo\_0 : }\(\mathbb{N}\)\texttt{;} \\
+\texttt{~~~~~~~~volverASensar\_1 : }\(\mathbb{N}\)\texttt{;} \\
+\texttt{~~~~end X}
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{~~~~S is} \\
+\texttt{~~~~~~~~}$\sigma$\texttt{ : }\(\mathbb{R}\)\texttt{;} \\
+\texttt{~~~~~~~~pat : }\(\mathbb{N}\)\texttt{;} \\
+\texttt{~~~~~~~~bloqueado : Boolean;} \\
+\texttt{~~~~~~~~procesando : Boolean;} \\
+\texttt{~~~~~~~~fin\_simulacion : Boolean;} \\
+\texttt{~~~~~~~~TIEMPO\_MAX\_ENTRADA\_VEHICULOS: }\(\mathbb{R}\)\texttt{;} \\
+\texttt{~~~~~~~~cola : Queue }\(\mathbb{N}\)\texttt{;} \\
+\texttt{~~~~~~~~latencia : R;} \\
+\texttt{~~~~end S}
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{~~~~$S_0$(pat, }$\sigma$ \texttt{, bloqueado, procesando, fin\_simulacion, TIEMPO\_MAX\_ENTRADA\_VEHICULOS, cola, latencia) is} \\
+\texttt{~~~~~~~~pat = 0;} \\
+\texttt{~~~~~~~~bloqueado = false;} \\
+\texttt{~~~~~~~~procesando = false;} \\
+\texttt{~~~~~~~~fin\_simulacion = false;} \\
+\texttt{~~~~~~~~TIEMPO\_MAX\_ENTRADA\_VEHICULOS = 43200 } \\
+\texttt{~~~~~~~~}$\sigma$\texttt{ = }$\infty$\texttt{;} \\
+\texttt{~~~~~~~~latencia = 1 } \\
+\texttt{~~~~end }$S_0$
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{~~~~Y is} \\
+\texttt{~~~~~~~~detectarVehiculo\_0 : }\(\mathbb{N}\)\texttt{;} \\
+\texttt{~~~~end Y}
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{~~~~}$\delta_{int}$\texttt{(pat, }$\sigma$\texttt{, bloqueado, procesando, fin\_simulacion, TIEMPO\_MAX\_ENTRADA\_VEHICULOS, cola) is} \\
+\texttt{~~~~~~~~if tsim $\ge$ TIEMPO\_MAX\_ENTRADA\_VEHICULOS $\rightarrow$} \\
+\texttt{~~~~~~~~~~~~bloqueado = true;} \\
+\texttt{~~~~~~~~~~~~fin\_simulacion = true;} \\
+\texttt{~~~~~~~~~~~~}$\sigma$\texttt{ = }\(\infty\)\texttt{;} \\
+\texttt{~~~~~~~~if tsim < \ TIEMPO\_MAX\_ENTRADA\_VEHICULOS $\rightarrow$} \\
+\texttt{~~~~~~~~~~~~}$\sigma$\texttt{ = }\(\infty\)\texttt{;} \\
+\texttt{~~~~~~~~~~~~procesando = false;} \\
+\texttt{~~~~end }$\delta_{int}$
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{~~~~}$\delta_{ext}$\texttt{(pat, }$\sigma$ \texttt{, bloqueado, procesando, fin\_simulacion, TIEMPO\_MAX\_ENTRADA\_VEHICULOS, cola, latencia, e, x, port) is}\\
+\texttt{~~~~~~~~if port == 0 }\(\rightarrow\)\\
+\texttt{~~~~~~~~~~~~cola.push(x);}\\
+\texttt{~~~~~~~~~~~~if not fin\_simulacion }\(\rightarrow\)\\
+\texttt{~~~~~~~~~~~~~~~~if not bloqueado }\(\rightarrow\)\\
+\texttt{~~~~~~~~~~~~~~~~~~~~procesando = true;}\\
+\texttt{~~~~~~~~~~~~~~~~~~~~pat = cola.front();}\\
+\texttt{~~~~~~~~~~~~~~~~~~~~cola.pop();}\\
+\texttt{~~~~~~~~~~~~~~~~~~~~bloqueado = true;}\\
+\texttt{~~~~~~~~~~~~~~~~~~~~}$\sigma$\texttt{ = latencia;}\\
+\texttt{~~~~~~~~~~~~~~~~if bloqueado }\(\rightarrow\)\\
+\texttt{~~~~~~~~~~~~~~~~~~~~if procesando }\(\rightarrow\)\\
+\texttt{~~~~~~~~~~~~~~~~~~~~~~~~}$\sigma$\texttt{ = }$\sigma$\texttt{ - e;}\\
+\texttt{~~~~~~~~~~~~~~~~~~~~if not procesando }\(\rightarrow\)\\
+\texttt{~~~~~~~~~~~~~~~~~~~~~~~~}$\sigma$\texttt{ = }\(\infty\)\texttt{;}\\
+\texttt{~~~~~~~~~~~~if fin\_simulacion }\(\rightarrow\)\\
+\texttt{~~~~~~~~~~~~~~~~}$\sigma$\texttt{ = }\(\infty\)\texttt{;}\\[5pt]
+
+\texttt{~~~~~~~~if port == 1 }\(\rightarrow\)\\
+\texttt{~~~~~~~~~~~~if not fin\_simulacion }\(\rightarrow\)\\
+\texttt{~~~~~~~~~~~~~~~~bloqueado = false;}\\
+\texttt{~~~~~~~~~~~~~~~~if cola.empty() }\(\rightarrow\)\\
+\texttt{~~~~~~~~~~~~~~~~~~~~}$\sigma$\texttt{ = }\(\infty\)\texttt{;}\\
+\texttt{~~~~~~~~~~~~~~~~if not cola.empty() }\(\rightarrow\)\\
+\texttt{~~~~~~~~~~~~~~~~~~~~pat = cola.front();}\\
+\texttt{~~~~~~~~~~~~~~~~~~~~cola.pop();}\\
+\texttt{~~~~~~~~~~~~~~~~~~~~procesando = true;}\\
+\texttt{~~~~~~~~~~~~~~~~~~~~bloqueado = true;}\\
+\texttt{~~~~~~~~~~~~~~~~~~~~}$\sigma$\texttt{ = latencia;}\\
+\texttt{~~~~~~~~~~~~if fin\_simulacion }\(\rightarrow\)\\
+\texttt{~~~~~~~~~~~~~~~~}$\sigma$\texttt{ = }\(\infty\)\texttt{;}\\
+\texttt{~~~~end }$\delta_{ext}$
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{~~~~}$\lambda$\texttt{(pat, }$\sigma$ \texttt{, bloqueado, procesando, fin\_simulacion, TIEMPO\_MAX\_ENTRADA\_VEHICULOS, cola, latencia) is} \\
+\texttt{~~~~~~~~detectarVehiculo\_0: pat;} \\
+\texttt{~~~~end }$\lambda$
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{~~~~ta(pat, }$\sigma$ \texttt{, bloqueado, procesando, fin\_simulacion, TIEMPO\_MAX\_ENTRADA\_VEHICULOS, cola, latencia) is} \\
+\texttt{~~~~~~~~}$\sigma$ \\
+\texttt{~~~~end ta}
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{end atomic}
+\end{flushleft}
+\end{tcolorbox}
+
+
+\subsubsection{SensorSalida}
+
+\begin{tcolorbox}[
+    colback=black!5!white,
+    colframe=black!80!white,
+    boxrule=0.8pt,
+    arc=2pt,
+    left=5pt,
+    right=5pt,
+    top=5pt,
+    bottom=5pt,
+    fontupper=\ttfamily,
+    breakable
+]
+\begin{flushleft}
+\texttt{atomic sensor\_salida <X, S, $S_0$, Y, }$\delta_{int}$\texttt{, }$\delta_{ext}$\texttt{, }$\lambda$\texttt{, ta> is}
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{~~~~X is} \\
+\texttt{~~~~~~~~vehiculoQuiereSalir\_0 : }\(\mathbb{N}\)\texttt{;} \\
+\texttt{~~~~~~~~volverASensar\_1 : }\(\mathbb{N}\)\texttt{;} \\
+\texttt{~~~~end X}
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{~~~~S is} \\
+\texttt{~~~~~~~~}$\sigma$\texttt{ : }\(\mathbb{R}\)\texttt{;} \\
+\texttt{~~~~~~~~pat : }\(\mathbb{N}\)\texttt{;} \\
+\texttt{~~~~~~~~bloqueado : Boolean;} \\
+\texttt{~~~~~~~~procesando : Boolean;} \\
+\texttt{~~~~~~~~cola : Queue }\(\mathbb{N}\)\texttt{;} \\
+\texttt{~~~~~~~~latencia : R;} \\
+\texttt{~~~~end S}
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{~~~~$S_0$ (pat, }$\sigma$ \texttt{, bloqueado, procesando, cola, latencia) is} \\
+\texttt{~~~~~~~~pat = 0;} \\
+\texttt{~~~~~~~~bloqueado = false;} \\
+\texttt{~~~~~~~~procesando = false;} \\
+\texttt{~~~~~~~~}$\sigma$\texttt{ = }$\infty$\texttt{;} \\
+\texttt{~~~~~~~~latencia = 1 } \\
+\texttt{~~~~end }$S_0$
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{~~~~Y is} \\
+\texttt{~~~~~~~~solicitarSalida\_0 : }\(\mathbb{N}\)\texttt{;} \\
+\texttt{~~~~end Y}
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{~~~~}$\delta_{int}$\texttt{(pat, }$\sigma$ \texttt{, bloqueado, procesando, cola, latencia) is} \\
+\texttt{~~~~~~~~procesando = false;} \\
+\texttt{~~~~~~~~}$\sigma$\texttt{ = }\(\infty\)\texttt{;} \\
+\texttt{~~~~end }$\delta_{int}$
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{~~~~}$\delta_{ext}$\texttt{(pat, }$\sigma$\texttt{, bloqueado, procesando, cola, latencia, e, x, port) is} \\
+\texttt{~~~~~~~~if port == 0 }\(\rightarrow\) \\
+\texttt{~~~~~~~~~~~~cola.push(x);} \\
+\texttt{~~~~~~~~~~~~if not bloqueado }\(\rightarrow\) \\
+\texttt{~~~~~~~~~~~~~~~~procesando = true;} \\
+\texttt{~~~~~~~~~~~~~~~~pat = cola.front();} \\
+\texttt{~~~~~~~~~~~~~~~~cola.pop();} \\
+\texttt{~~~~~~~~~~~~~~~~bloqueado = true;} \\
+\texttt{~~~~~~~~~~~~~~~~}$\sigma$\texttt{ = latencia;} \\
+\texttt{~~~~~~~~~~~~if bloqueado }\(\rightarrow\) \\
+\texttt{~~~~~~~~~~~~~~~~if procesando }\(\rightarrow\) \\
+\texttt{~~~~~~~~~~~~~~~~~~~~}$\sigma$\texttt{ = }$\sigma$\texttt{ - e;} \\
+\texttt{~~~~~~~~~~~~~~~~if not procesando }\(\rightarrow\) \\
+\texttt{~~~~~~~~~~~~~~~~~~~~}$\sigma$\texttt{ = }\(\infty\)\texttt{;} \\[5pt]
+
+\texttt{~~~~~~~~if port == 1 }\(\rightarrow\) \\
+\texttt{~~~~~~~~~~~~bloqueado = false;} \\
+\texttt{~~~~~~~~~~~~if cola.empty() }\(\rightarrow\) \\
+\texttt{~~~~~~~~~~~~~~~~}$\sigma$\texttt{ = }\(\infty\)\texttt{;} \\
+\texttt{~~~~~~~~~~~~if not cola.empty() }\(\rightarrow\) \\
+\texttt{~~~~~~~~~~~~~~~~pat = cola.front();} \\
+\texttt{~~~~~~~~~~~~~~~~cola.pop();} \\
+\texttt{~~~~~~~~~~~~~~~~procesando = true;} \\
+\texttt{~~~~~~~~~~~~~~~~bloqueado = true;} \\
+\texttt{~~~~~~~~~~~~~~~~}$\sigma$\texttt{ = latencia;} \\
+\texttt{~~~~end }$\delta_{ext}$
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{~~~~}$\lambda$\texttt{(pat, }$\sigma$\texttt{, bloqueado, procesando, cola, latencia) is} \\
+\texttt{~~~~~~~~solicitarSalida\_0 : pat;} \\
+\texttt{~~~~end }$\lambda$
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{~~~~ta(pat, }$\sigma$\texttt{, bloqueado, procesando, cola, latencia) is} \\
+\texttt{~~~~~~~~}$\sigma$ \\
+\texttt{~~~~end ta}
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{end atomic}
+\end{flushleft}
+\end{tcolorbox}
+
+
+\subsubsection{BarreraEntrada}
+
+\begin{tcolorbox}[
+    colback=black!5!white,
+    colframe=black!80!white,
+    boxrule=0.8pt,
+    arc=2pt,
+    left=5pt,
+    right=5pt,
+    top=5pt,
+    bottom=5pt,
+    fontupper=\ttfamily,
+    breakable
+]
+\begin{flushleft}
+\texttt{atomic barrera\_entrada <X, S, $S_0$, Y, }$\delta_{int}$\texttt{, }$\delta_{ext}$\texttt{, }$\lambda$\texttt{, ta> is}
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{~~~~X is} \\
+\texttt{~~~~~~~~permitirEntrada\_0 : }\(\mathbb{N}\)\texttt{;} \\
+\texttt{~~~~~~~~denegarEntrada\_1 : }\(\mathbb{N}\)\texttt{;} \\
+\texttt{~~~~end X}
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{~~~~S is} \\
+\texttt{~~~~~~~~}$\sigma$\texttt{ : }\(\mathbb{R}\)\texttt{;} \\
+\texttt{~~~~~~~~pat : }\(\mathbb{N}\)\texttt{;} \\
+\texttt{~~~~~~~~rechazado : Boolean;} \\
+\texttt{~~~~~~~~tiempo\_abertura : }\(\mathbb{R}\)\texttt{;} \\
+\texttt{~~~~~~~~tiempo\_cierre : }\(\mathbb{R}\)\texttt{;} \\
+\texttt{~~~~~~~~tiempo\_retiro : }\(\mathbb{R}\)\texttt{;} \\
+\texttt{~~~~end S}
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{~~~~$S_0$ (pat, }$\sigma$ \texttt{, rechazado, tiempo\_abertura, tiempo\_cierre, tiempo\_retiro) is} \\
+\texttt{~~~~~~~~pat = 0;} \\
+\texttt{~~~~~~~~}$\sigma$\texttt{ = }$\infty$\texttt{;} \\
+\texttt{~~~~~~~~tiempo\_abertura = 4;} \\
+\texttt{~~~~~~~~tiempo\_cierre = 4;} \\
+\texttt{~~~~~~~~tiempo\_retiro = 2;} \\
+\texttt{~~~~end }$S_0$
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{~~~~Y is} \\
+\texttt{~~~~~~~~vehiculoHaIngresado\_0 : }\(\mathbb{N}\)\texttt{;} \\
+\texttt{~~~~~~~~vehiculoRechazadoSeHaRetirado\_1 : }\(\mathbb{N}\)\texttt{;} \\
+\texttt{~~~~end Y}
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{~~~~}$\delta_{int}$\texttt{(pat, }$\sigma$ \texttt{, rechazado, tiempo\_abertura, tiempo\_cierre, tiempo\_retiro) is} \\
+\texttt{~~~~~~~~rechazado = false;} \\
+\texttt{~~~~~~~~pat = 0;} \\
+\texttt{~~~~~~~~}$\sigma$\texttt{ = }\(\infty\)\texttt{;} \\
+\texttt{~~~~end }$\delta_{int}$
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{~~~~}$\delta_{ext}$\texttt{(pat, }$\sigma$ \texttt{, rechazado, tiempo\_abertura, tiempo\_cierre, tiempo\_retiro, e, x, port) is} \\
+\texttt{~~~~~~~~if port == 0 }\(\rightarrow\) \\
+\texttt{~~~~~~~~~~~~}$\sigma$\texttt{ =  tiempo\_abertura + tiempo\_cierre + Uniforme(1, 3);} \\
+\texttt{~~~~~~~~~~~~rechazado = false;} \\
+\texttt{~~~~~~~~~~~~pat = x;} \\
+\texttt{~~~~~~~~if port == 1 }\(\rightarrow\) \\
+\texttt{~~~~~~~~~~~~}$\sigma$\texttt{ = tiempo\_retiro;} \\
+\texttt{~~~~~~~~~~~~rechazado = true;} \\
+\texttt{~~~~~~~~~~~~pat = x;} \\
+\texttt{~~~~end }$\delta_{ext}$
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{~~~~}$\lambda$\texttt{(pat, }$\sigma$ \texttt{, rechazado, tiempo\_abertura, tiempo\_cierre, tiempo\_retiro) is} \\
+\texttt{~~~~~~~~if not rechazado }\(\rightarrow\) \\
+\texttt{~~~~~~~~~~~~vehiculoHaIngresado\_0 = pat;} \\
+\texttt{~~~~~~~~if rechazado }\(\rightarrow\) \\
+\texttt{~~~~~~~~~~~~vehiculoRechazadoSeHaRetirado\_1 = pat;} \\
+\texttt{~~~~end }$\lambda$
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{~~~~ta(pat, }$\sigma$ \texttt{, rechazado, tiempo\_abertura, tiempo\_cierre, tiempo\_retiro) is} \\
+\texttt{~~~~~~~~}$\sigma$ \\
+\texttt{~~~~end ta}
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{end atomic}
+\end{flushleft}
+\end{tcolorbox}
+
+
+\subsubsection{BarreraSalida}
+
+\begin{tcolorbox}[
+    colback=black!5!white,
+    colframe=black!80!white,
+    boxrule=0.8pt,
+    arc=2pt,
+    left=5pt,
+    right=5pt,
+    top=5pt,
+    bottom=5pt,
+    fontupper=\ttfamily,
+    breakable
+]
+\begin{flushleft}
+\texttt{atomic barrera\_salida <X, S, $S_0$, Y, }$\delta_{int}$\texttt{, }$\delta_{ext}$\texttt{, }$\lambda$\texttt{, ta> is}
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{~~~~X is} \\
+\texttt{~~~~~~~~permitirSalida\_0 : }\(\mathbb{N}\)\texttt{;} \\
+\texttt{~~~~end X}
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{~~~~S is} \\
+\texttt{~~~~~~~~}$\sigma$\texttt{ : }\(\mathbb{R}\)\texttt{;} \\
+\texttt{~~~~~~~~pat : }\(\mathbb{N}\)\texttt{;} \\
+\texttt{~~~~~~~~tiempo\_abertura : }\(\mathbb{R}\)\texttt{;} \\
+\texttt{~~~~~~~~tiempo\_cierre : }\(\mathbb{R}\)\texttt{;} \\
+\texttt{~~~~end S}
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{~~~~$S_0$ (pat, }$\sigma$ \texttt{, tiempo\_abertura, tiempo\_cierre) is} \\
+\texttt{~~~~~~~~pat = 0;} \\
+\texttt{~~~~~~~~}$\sigma$\texttt{ = }$\infty$\texttt{;} \\
+\texttt{~~~~~~~~tiempo\_abertura = 4;} \\
+\texttt{~~~~~~~~tiempo\_cierre = 4;} \\
+\texttt{~~~~end }$S_0$
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{~~~~Y is} \\
+\texttt{~~~~~~~~vehiculoHaSalido\_0 : }\(\mathbb{N}\)\texttt{;} \\
+\texttt{~~~~end Y}
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{~~~~}$\delta_{int}$\texttt{(pat, }$\sigma$ \texttt{, tiempo\_abertura, tiempo\_cierre) is} \\
+\texttt{~~~~~~~~pat = 0;} \\
+\texttt{~~~~~~~~}$\sigma$\texttt{ = }\(\infty\)\texttt{;} \\
+\texttt{~~~~end }$\delta_{int}$
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{~~~~}$\delta_{ext}$\texttt{(pat, }$\sigma$ \texttt{, tiempo\_abertura, tiempo\_cierre, e, x, port) is} \\
+\texttt{~~~~~~~~}$\sigma$\texttt{ = tiempo\_abertura + tiempo\_cierre + Uniforme(1, 3);} \\
+\texttt{~~~~~~~~pat = x;} \\
+\texttt{~~~~end }$\delta_{ext}$
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{~~~~}$\lambda$\texttt{(pat, }$\sigma$ \texttt{, tiempo\_abertura, tiempo\_cierre) is} \\
+\texttt{~~~~~~~~vehiculoHaSalido\_0 = pat;} \\
+\texttt{~~~~end }$\lambda$
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{~~~~ta(pat, }$\sigma$ \texttt{, tiempo\_abertura, tiempo\_cierre) is} \\
+\texttt{~~~~~~~~}$\sigma$ \\
+\texttt{~~~~end ta}
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{end atomic}
+\end{flushleft}
+\end{tcolorbox}
+
+
+\subsubsection{Controlador}
+
+\begin{tcolorbox}[
+    colback=black!5!white,
+    colframe=black!80!white,
+    boxrule=0.8pt,
+    arc=2pt,
+    left=5pt,
+    right=5pt,
+    top=5pt,
+    bottom=5pt,
+    fontupper=\ttfamily,
+    breakable
+]
+\begin{flushleft}
+\texttt{atomic controlador <X, S, $S_0$, Y, }$\delta_{int}$\texttt{, }$\delta_{ext}$\texttt{, }$\lambda$\texttt{, ta> is}
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{~~~~X is} \\
+\texttt{~~~~~~~~vehiculoHaIngresado\_0 : }\(\mathbb{N}\)\texttt{;} \\
+\texttt{~~~~~~~~detectarVehiculo\_1 : }\(\mathbb{N}\)\texttt{;} \\
+\texttt{~~~~~~~~solicitarSalida\_2 : }\(\mathbb{N}\)\texttt{;} \\
+\texttt{~~~~~~~~vehiculoHaSalido\_3 : }\(\mathbb{N}\)\texttt{;} \\
+\texttt{~~~~~~~~vehiculoRechazadoSeHaRetirado\_4 : }\(\mathbb{N}\)\texttt{;} \\
+\texttt{~~~~end X}
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{~~~~S is} \\
+\texttt{~~~~~~~~}$\sigma$\texttt{ : }\(\mathbb{R}\)\texttt{;} \\
+\texttt{~~~~~~~~pat : }\(\mathbb{N}\)\texttt{;} \\
+\texttt{~~~~~~~~pat\_entrada : }\(\mathbb{N}\)\texttt{;} \\
+\texttt{~~~~~~~~cant\_autos : }\(\mathbb{N}\)\texttt{;} \\
+\texttt{~~~~~~~~puerto : }\(\mathbb{N}\)\texttt{;} \\
+\texttt{~~~~~~~~pasar\_a\_barrera\_entrada : Boolean;} \\
+\texttt{~~~~~~~~esperando\_entrar : Boolean;} \\
+\texttt{~~~~~~~~tiempo\_max\_rta\_controlador : }\(\mathbb{R}\)\texttt{;} \\
+\texttt{~~~~end S}
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{~~~~$S_0$ (pat, }$\sigma$ \texttt{, pat\_entrada, cant\_autos, puerto, pasar\_a\_barrera\_entrada, esperando\_entrar, tiempo\_max\_rta\_controlador) is} \\
+\texttt{~~~~~~~~pat = 0;} \\
+\texttt{~~~~~~~~}$\sigma$\texttt{ = }$\infty$\texttt{;} \\
+\texttt{~~~~~~~~pat\_entrada = 0;} \\
+\texttt{~~~~~~~~cant\_autos = 0;} \\
+\texttt{~~~~~~~~puerto = 0;} \\
+\texttt{~~~~~~~~pasar\_a\_barrera\_entrada = false;} \\
+\texttt{~~~~~~~~esperando\_entrar = false;} \\
+\texttt{~~~~~~~~tiempo\_max\_rta\_controlador = 3;} \\
+\texttt{~~~~end }$S_0$
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{~~~~Y is} \\
+\texttt{~~~~~~~~permitirEntradaDirecto\_0 : }\(\mathbb{N}\)\texttt{;} \\
+\texttt{~~~~~~~~permitirEntradaEstacionamientoYVolverASensarEntradaNormal\_1 : }\(\mathbb{N}\)\texttt{;} \\
+\texttt{~~~~~~~~denegarEntrada\_2 : }\(\mathbb{N}\)\texttt{;} \\
+\texttt{~~~~~~~~volverASensarSalidaNormal\_3 : }\(\mathbb{N}\)\texttt{;} \\
+\texttt{~~~~~~~~permitirSalida\_4 : }\(\mathbb{N}\)\texttt{;} \\
+\texttt{~~~~~~~~permitirEntradaDemoraYVolverASensarSalidaDemora\_5 : }\(\mathbb{N}\)\texttt{;} \\
+\texttt{~~~~~~~~volverASensarEntradaRechazado\_6 : }\(\mathbb{N}\)\texttt{;} \\
+\texttt{~~~~end Y}
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{~~~~}$\delta_{int}$\texttt{(pat, }$\sigma$ \texttt{, pat\_entrada, cant\_autos, puerto, pasar\_a\_barrera\_entrada, esperando\_entrar, tiempo\_max\_rta\_controlador) is} \\
+\texttt{~~~~~~~~pasar\_a\_barrera\_entrada = false;} \\
+\texttt{~~~~~~~~}$\sigma$\texttt{ = }\(\infty\)\texttt{;} \\
+\texttt{~~~~end }$\delta_{int}$
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{~~~~}$\delta_{ext}$\texttt{(pat, }$\sigma$ \texttt{, pat\_entrada, cant\_autos, puerto, pasar\_a\_barrera\_entrada, esperando\_entrar, tiempo\_max\_rta\_controlador, e, x, port) is} \\
+\texttt{~~~~~~~~puerto = port;}\\
+\texttt{~~~~~~~~pat = x;}\\
+\texttt{~~~~~~~~if port == 0 }\(\rightarrow\)\\
+\texttt{~~~~~~~~~~~~}$\sigma$\texttt{ = 0.0;}\\
+\texttt{~~~~~~~~if port == 1 }\(\rightarrow\)\\
+\texttt{~~~~~~~~~~~~if cant\_autos < \ 30 }\(\rightarrow\)\\
+\texttt{~~~~~~~~~~~~~~~~cant\_autos = cant\_autos + 1;}\\
+\texttt{~~~~~~~~~~~~~~~~}$\sigma$\texttt{ = 0.0;}\\
+\texttt{~~~~~~~~~~~~if cant\_autos == 30 }\(\rightarrow\)\\
+\texttt{~~~~~~~~~~~~~~~~}$\sigma$\texttt{ = tiempo\_max\_rta\_controlador;}\\
+\texttt{~~~~~~~~~~~~~~~~pat\_entrada = x;}\\
+\texttt{~~~~~~~~~~~~~~~~esperando\_entrar = true;}\\
+\texttt{~~~~~~~~if port == 2 }\(\rightarrow\)\\
+\texttt{~~~~~~~~~~~~}$\sigma$\texttt{ = 0.0;}\\
+\texttt{~~~~~~~~if port == 3 }\(\rightarrow\)\\
+\texttt{~~~~~~~~~~~~cant\_autos = cant\_autos - 1;}\\
+\texttt{~~~~~~~~~~~~if esperando\_entrar }\(\rightarrow\)\\
+\texttt{~~~~~~~~~~~~~~~~pat = pat\_entrada;}\\
+\texttt{~~~~~~~~~~~~~~~~cant\_autos = cant\_autos + 1;}\\
+\texttt{~~~~~~~~~~~~~~~~pasar\_a\_barrera\_entrada = true;}\\
+\texttt{~~~~~~~~~~~~~~~~esperando\_entrar = false;}\\
+\texttt{~~~~~~~~~~~~}$\sigma$\texttt{ = 0.0;}\\
+\texttt{~~~~~~~~if port == 4 }\(\rightarrow\)\\
+\texttt{~~~~~~~~~~~~}$\sigma$\texttt{ = 0.0;}\\
+\texttt{~~~~~~~~~~~~esperando\_entrar = false;}\\
+\texttt{~~~~end }$\delta_{ext}$
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{~~~~}$\lambda$\texttt{(pat, }$\sigma$ \texttt{, pat\_entrada, cant\_autos, puerto, pasar\_a\_barrera\_entrada, esperando\_entrar, tiempo\_max\_rta\_controlador) is} \\
+\texttt{~~~~~~~~if puerto == 0 }\(\rightarrow\)\\
+\texttt{~~~~~~~~~~~~permitirEntradaEstacionamientoYVolverASensarEntradaNormal\_1 = pat;}\\
+\texttt{~~~~~~~~if puerto == 1 \(\land\) not esperando\_entrar }\(\rightarrow\)\\
+\texttt{~~~~~~~~~~~~permitirEntradaDirecto\_0 = pat;}\\
+\texttt{~~~~~~~~if puerto == 1 \(\land\) esperando\_entrar }\(\rightarrow\)\\
+\texttt{~~~~~~~~~~~~esperando\_entrar = false;}\\
+\texttt{~~~~~~~~~~~~denegarEntrada\_2 = pat\_entrada;}\\
+\texttt{~~~~~~~~if puerto == 2 }\(\rightarrow\)\\
+\texttt{~~~~~~~~~~~~permitirSalida\_4 = pat;}\\
+\texttt{~~~~~~~~if puerto == 3 \(\land\) not pasar\_a\_barrera\_entrada }\(\rightarrow\)\\
+\texttt{~~~~~~~~~~~~volverASensarSalidaNormal\_3 = pat;}\\
+\texttt{~~~~~~~~if puerto == 3 \(\land\) pasar\_a\_barrera\_entrada }\(\rightarrow\)\\
+\texttt{~~~~~~~~~~~~esperando\_entrar = false;}\\
+\texttt{~~~~~~~~~~~~permitirEntradaDemoraYVolverASensarSalidaDemora\_5 = pat;}\\
+\texttt{~~~~~~~~if puerto == 4 }\(\rightarrow\)\\
+\texttt{~~~~~~~~~~~~volverASensarEntradaRechazado\_6 = pat;}\\
+\texttt{~~~~end }$\lambda$
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{~~~~ta(pat, }$\sigma$ \texttt{, pat\_entrada, cant\_autos, puerto, pasar\_a\_barrera\_entrada, esperando\_entrar, tiempo\_max\_rta\_controlador) is} \\
+\texttt{~~~~~~~~}$\sigma$ \\
+\texttt{~~~~end ta}
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{end atomic}
+\end{flushleft}
+\end{tcolorbox}
+
+
+\subsubsection{Estacionamiento}
+
+\begin{tcolorbox}[
+    colback=black!5!white,
+    colframe=black!80!white,
+    boxrule=0.8pt,
+    arc=2pt,
+    left=5pt,
+    right=5pt,
+    top=5pt,
+    bottom=5pt,
+    fontupper=\ttfamily,
+    breakable
+]
+\begin{flushleft}
+\begin{flushleft}
+\texttt{atomic estacionamiento <X, S, $S_0$, Y, $\delta_{int}$, $\delta_{ext}$, $\lambda$, ta> is}\\
+\texttt{~~~~X is}\\
+\texttt{~~~~~~~~permitirEntrada\_0 : N;}\\
+\texttt{~~~~end X}\\[5pt]
+
+\texttt{~~~~S is}\\
+\texttt{~~~~~~~~}$\sigma$ \texttt{ : } $\mathbb{R}$ \texttt{;} \\
+\texttt{~~~~~~~~cola\_prioridad : PriorityQueue<Pair<} $\mathbb{N}$ \texttt{,} $\mathbb{R}$ \texttt{\>> MenorMayorConClaveLaSegundaComponente;}\\
+\texttt{~~~~~~~~tmp\_clone\_cola : PriorityQueue<Pair<} $\mathbb{N}$ \texttt{,} $\mathbb{R}$ \texttt{\>> MenorMayorConClaveLaSegundaComponente;}\\
+\texttt{~~~~~~~~tmp\_new\_pair : Pair<} $\mathbb{N}$ \texttt{,} $\mathbb{R}$ \texttt{>;}\\
+\texttt{~~~~~~~~tmp\_patente : } $\mathbb{N}$ \texttt{;}\\
+\texttt{~~~~~~~~tmp\_tiempo : } $\mathbb{R}$ \texttt{;}\\
+\texttt{~~~~end S}\\[5pt]
+
+\texttt{~~~~$S_0$ ($\sigma$, cola\_prioridad, tmp\_clone\_cola, tmp\_new\_pair, tmp\_patente, tmp\_tiempo) is} \\
+\texttt{~~~~~~~~}$\sigma$\texttt{ = }$\infty$\texttt{;} \\
+\texttt{~~~~~~~~cola\_prioridad = new PriorityQueue(new Pair<>())} \\
+\texttt{~~~~end }$S_0$ \\ [5pt]
+
+\texttt{~~~~Y is}\\
+\texttt{~~~~~~~~vehiculoQuiereSalir\_0 : N;}\\
+\texttt{~~~~end Y}\\[5pt]
+
+\texttt{~~~~$\delta_{int}$ ($\sigma$, cola\_prioridad, tmp\_clone\_cola, tmp\_new\_pair, tmp\_patente, tmp\_tiempo) is}\\
+\texttt{~~~~~~~~if not cola\_prioridad.empty() }\(\rightarrow\)\\
+\texttt{~~~~~~~~~~~~actualizarTiempos(tsim, cola\_prioridad, tmp\_clone\_cola, tmp\_new\_pair, tmp\_patente, tmp\_tiempo);}\\
+\texttt{~~~~~~~~~~~~$\sigma$ = cola\_prioridad.top().second;}\\
+\texttt{~~~~~~~~if cola\_prioridad.empty() }\(\rightarrow\)\\
+\texttt{~~~~~~~~~~~~$\sigma$ = $\infty$;}\\
+\texttt{~~~~end $\delta_{int}$}\\[5pt]
+
+\texttt{~~~~$\delta_{ext}$ ($\sigma$, cola\_prioridad, tmp\_clone\_cola, tmp\_new\_pair, tmp\_patente, tmp\_tiempo, e, x, port) is}\\
+\texttt{~~~~~~~~actualizarTiempos(e, cola\_prioridad, tmp\_clone\_cola, tmp\_new\_pair, tmp\_patente, tmp\_tiempo);}\\
+\texttt{~~~~~~~~tmp\_new\_pair = new Pair<N, R>(x, Uniforme(120, 300));}\\
+\texttt{~~~~~~~~cola\_prioridad.push(tmp\_new\_pair);}\\
+\texttt{~~~~~~~~$\sigma$ = cola\_prioridad.top().second;}\\
+\texttt{~~~~end $\delta_{ext}$}\\[5pt]
+
+\texttt{~~~~$\lambda$ ($\sigma$, cola\_prioridad, tmp\_clone\_cola, tmp\_new\_pair, tmp\_patente, tmp\_tiempo) is}\\
+\texttt{~~~~~~~~tmp\_patente = cola\_prioridad.top().first;}\\
+\texttt{~~~~~~~~cola\_prioridad.pop();}\\
+\texttt{~~~~~~~~vehiculoQuiereSalir\_0 = tmp\_patente;}\\
+\texttt{~~~~end $\lambda$}\\[5pt]
+
+\texttt{~~~~ta($\sigma$, cola\_prioridad) is}\\
+\texttt{~~~~~~~~$\sigma$;}\\
+\texttt{~~~~end ta}\\[5pt]
+
+\texttt{~~~~actualizarTiempos(e, cola\_prioridad, tmp\_clone\_cola, tmp\_new\_pair, tmp\_patente, tmp\_tiempo) is}\\
+\texttt{~~~~~~~~foreach par\_auto in cola\_prioridad do}\\
+\texttt{~~~~~~~~~~~~tmp\_patente = cola\_prioridad.top().first;}\\
+\texttt{~~~~~~~~~~~~tmp\_tiempo = cola\_prioridad.top().second - e;}\\
+\texttt{~~~~~~~~~~~~cola\_prioridad.pop();}\\
+\texttt{~~~~~~~~~~~~if (tmp\_tiempo < \ 0.0) }\(\rightarrow\) \texttt{tmp\_tiempo = 0.0;} \\
+\texttt{~~~~~~~~~~~~tmp\_new\_pair = new Pair<N, R>(tmp\_patente, tmp\_tiempo);}\\
+\texttt{~~~~~~~~~~~~tmp\_clone\_cola.push(tmp\_new\_pair);}\\
+\texttt{~~~~~~~~end foreach}\\
+\texttt{~~~~~~~~cola\_prioridad = tmp\_clone\_cola;}\\
+\texttt{~~~~end actualizarTiempos}\\[5pt]
+
+\texttt{end atomic}
+\end{flushleft}
+
+\end{flushleft}
+\end{tcolorbox}
+
+
+\subsubsection{Monitor}
+
+\begin{tcolorbox}[
+    colback=black!5!white,
+    colframe=black!80!white,
+    boxrule=0.8pt,
+    arc=2pt,
+    left=5pt,
+    right=5pt,
+    top=5pt,
+    bottom=5pt,
+    fontupper=\ttfamily,
+    breakable
+]
+\begin{flushleft}
+\texttt{atomic monitor <X, S, $S_0$, Y, }$\delta_{int}$\texttt{, }$\delta_{ext}$\texttt{, }$\lambda$\texttt{, ta> is}
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{~~~~X is} \\
+\texttt{~~~~~~~~barreraEntradaAdmitidos\_0 : }\(\mathbb{N}\)\texttt{;} \\
+\texttt{~~~~~~~~barreraEntradaRechazados\_1 : }\(\mathbb{N}\)\texttt{;} \\
+\texttt{~~~~~~~~barreraSalidaEgresoAbsoluto\_2 : }\(\mathbb{N}\)\texttt{;} \\
+\texttt{~~~~end X}
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{~~~~S is} \\
+\texttt{~~~~~~~~}$\sigma$\texttt{ : }\(\mathbb{R}\)\texttt{;} \\
+\texttt{~~~~~~~~tiempos\_entrada, tiempos\_salida : List<}\(\mathbb{R}\)\texttt{>;} \\
+\texttt{~~~~~~~~autos\_entrantes, autos\_salientes : List<}\(\mathbb{N}\)\texttt{>;} \\
+\texttt{~~~~~~~~K\_ESTACIONAMENTO, total\_intentos, rechazados, total\_admitidos, total\_salidos,} \\
+\texttt{~~~~~~~~tiempo\_ultimo\_evento, ocupacion\_actual, suma\_tiempos\_permanencia, acumulado\_ocupacion,} \\
+\texttt{~~~~~~~~promedio\_permanencia, tasa\_rechazo, ocupacion\_promedio : }\(\mathbb{R}\)\texttt{;} \\
+\texttt{~~~~~~~~propiedad\_safety, propiedad\_liveness\_1 : Boolean;} \\
+\texttt{~~~~~~~~ultimo\_puerto : }\(\mathbb{N}\)\texttt{;} \\
+\texttt{~~~~end S}
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{~~~~$S_0$ (tiempos\_entrada, tiempos\_salida, autos\_entrantes, autos\_salientes, K\_ESTACIONAMENTO, total\_intentos, rechazados, total\_admitidos, total\_salidos, tiempo\_ultimo\_evento, ocupacion\_actual, suma\_tiempos\_permanencia, acumulado\_ocupacion, promedio\_permanencia, tasa\_rechazo, ocupacion\_promedio, propiedad\_safety, propiedad\_liveness\_1, ultimo\_puerto) is} \\[5pt]
+\texttt{~~~~~~~~}$\sigma$\texttt{ = }$\infty$\texttt{;} \\
+\texttt{~~~~~~~~tiempos\_entrada = [];} \\
+\texttt{~~~~~~~~tiempos\_salida = [];} \\
+\texttt{~~~~~~~~autos\_entrantes = [];} \\
+\texttt{~~~~~~~~autos\_salientes = [];} \\
+\texttt{~~~~~~~~K\_ESTACIONAMENTO = 30;} \\
+\texttt{~~~~~~~~total\_intentos = 0;} \\
+\texttt{~~~~~~~~rechazados = 0;} \\
+\texttt{~~~~~~~~total\_admitidos = 0;} \\
+\texttt{~~~~~~~~total\_salidos = 0;} \\
+\texttt{~~~~~~~~tiempo\_ultimo\_evento = 0;} \\
+\texttt{~~~~~~~~ocupacion\_actual = 0;} \\
+\texttt{~~~~~~~~suma\_tiempos\_permanencia = 0;} \\
+\texttt{~~~~~~~~acumulado\_ocupacion = 0;} \\
+\texttt{~~~~~~~~promedio\_permanencia = 0;} \\
+\texttt{~~~~~~~~tasa\_rechazo = 0;} \\
+\texttt{~~~~~~~~ocupacion\_promedio = 0;} \\
+\texttt{~~~~~~~~propiedad\_safety = true;} \\
+\texttt{~~~~~~~~propiedad\_liveness\_1 = true;} \\
+\texttt{~~~~~~~~ultimo\_puerto = 0;} \\
+\texttt{~~~~end }$S_0$
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{~~~~Y is} \\
+\texttt{~~~~~~~~tiempoPromedioPermanencia\_0 : }\(\mathbb{R}\)\texttt{;} \\
+\texttt{~~~~~~~~tasaRechazo\_1 : }\(\mathbb{R}\)\texttt{;} \\
+\texttt{~~~~~~~~ocupacionPromedio\_2 : }\(\mathbb{R}\)\texttt{;} \\
+\texttt{~~~~end Y}
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{~~~~}$\delta_{int}$\texttt{(tiempos\_entrada, tiempos\_salida, autos\_entrantes, autos\_salientes, K\_ESTACIONAMENTO, total\_intentos, rechazados, total\_admitidos, total\_salidos, tiempo\_ultimo\_evento, ocupacion\_actual, suma\_tiempos\_permanencia, acumulado\_ocupacion, promedio\_permanencia, tasa\_rechazo, ocupacion\_promedio, propiedad\_safety, propiedad\_liveness\_1, ultimo\_puerto) is} \\
+\texttt{~~~~~~~~}$\sigma$\texttt{ = }\(\infty\)\texttt{;} \\
+\texttt{~~~~end }$\delta_{int}$
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{~~~~}$\delta_{ext}$\texttt{(tiempos\_entrada, tiempos\_salida, autos\_entrantes, autos\_salientes, K\_ESTACIONAMENTO, total\_intentos, rechazados, total\_admitidos, total\_salidos, tiempo\_ultimo\_evento, ocupacion\_actual, suma\_tiempos\_permanencia, acumulado\_ocupacion, promedio\_permanencia, tasa\_rechazo, ocupacion\_promedio, propiedad\_safety, propiedad\_liveness\_1, ultimo\_puerto, e, x, port) is} \\
+\texttt{~~~~~~~~ultimo\_puerto = port;} \\
+\texttt{~~~~~~~~acumulado\_ocupacion += ocupacion\_actual * (e - tiempo\_ultimo\_evento);} \\
+\texttt{~~~~~~~~tiempo\_ultimo\_evento = e;} \\[3pt]
+
+\texttt{~~~~~~~~if port == 0 }\(\rightarrow\) \\
+\texttt{~~~~~~~~~~~~total\_intentos += 1;} \\
+\texttt{~~~~~~~~~~~~total\_admitidos += 1;} \\
+\texttt{~~~~~~~~~~~~ocupacion\_actual += 1;} \\
+\texttt{~~~~~~~~~~~~(resize y asignación de tiempos y autos entrantes);} \\
+\texttt{~~~~~~~~~~~~propiedad\_safety = propiedad\_safety }\(\land\)\texttt{ (ocupacion\_actual }\(\leq\)\texttt{ K\_ESTACIONAMENTO);} \\
+\texttt{~~~~~~~~~~~~}$\sigma$\texttt{ = 0.0;} \\[3pt]
+
+\texttt{~~~~~~~~if port == 1 }\(\rightarrow\) \\
+\texttt{~~~~~~~~~~~~total\_intentos += 1;} \\
+\texttt{~~~~~~~~~~~~rechazados += 1;} \\
+\texttt{~~~~~~~~~~~~tasa\_rechazo = rechazados / total\_intentos;} \\
+\texttt{~~~~~~~~~~~~propiedad\_safety = propiedad\_safety }\(\land\)\texttt{ (ocupacion\_actual }\(\leq\)\texttt{ K\_ESTACIONAMENTO);} \\
+\texttt{~~~~~~~~~~~~}$\sigma$\texttt{ = 0.0;} \\[3pt]
+
+\texttt{~~~~~~~~if port == 2 }\(\rightarrow\) \\
+\texttt{~~~~~~~~~~~~(resize y asignación de tiempos y autos salientes);} \\
+\texttt{~~~~~~~~~~~~suma\_tiempos\_permanencia += tiempos\_salida[patente] - tiempos\_entrada[patente];} \\
+\texttt{~~~~~~~~~~~~total\_salidos += 1;} \\
+\texttt{~~~~~~~~~~~~promedio\_permanencia = suma\_tiempos\_permanencia / total\_salidos;} \\
+\texttt{~~~~~~~~~~~~ocupacion\_actual -= 1;} \\
+\texttt{~~~~~~~~~~~~if e > 0 }\(\rightarrow\) \texttt{ ocupacion\_promedio = acumulado\_ocupacion / e;} \\
+\texttt{~~~~~~~~~~~~propiedad\_safety = propiedad\_safety }\(\land\)\texttt{ (ocupacion\_actual }\(\leq\)\texttt{ K\_ESTACIONAMENTO);} \\
+\texttt{~~~~~~~~~~~~actualizarPropiedadLiveness1(e, x, ...);} \\
+\texttt{~~~~~~~~~~~~}$\sigma$\texttt{ = 0.0;} \\
+\texttt{~~~~end }$\delta_{ext}$
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{~~~~}$\lambda$\texttt{(}$\sigma$\texttt{) is} \\
+\texttt{~~~~~~~~if ultimo\_puerto == 0 }\(\rightarrow\) \texttt{tiempoPromedioPermanencia\_0 = promedio\_permanencia;} \\
+\texttt{~~~~~~~~if ultimo\_puerto == 1 }\(\rightarrow\) \texttt{tasaRechazo\_1 = tasa\_rechazo;} \\
+\texttt{~~~~~~~~if ultimo\_puerto == 2 }\(\rightarrow\) \texttt{ocupacionPromedio\_2 = ocupacion\_promedio;} \\
+\texttt{~~~~end }$\lambda$
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{~~~~ta(}$\sigma$\texttt{) is} \\
+\texttt{~~~~~~~~}$\sigma$ \\
+\texttt{~~~~end ta}
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{~~~~actualizarPropiedadLiveness1(e, patente, autos\_entrantes, autos\_salientes, propiedad\_liveness\_1) is} \\
+\texttt{~~~~~~~~bool entro = false;} \\
+\texttt{~~~~~~~~for i in 0 .. autos\_entrantes.size() }\(\rightarrow\) \\
+\texttt{~~~~~~~~~~~~if patente == autos\_entrantes[i] }\(\rightarrow\) entro = true; break; \\
+\texttt{~~~~~~~~bool salio = false;} \\
+\texttt{~~~~~~~~for i in 0 .. autos\_salientes.size() }\(\rightarrow\) \\
+\texttt{~~~~~~~~~~~~if patente == autos\_salientes[i] }\(\rightarrow\) salio = true; break; \\
+\texttt{~~~~~~~~propiedad\_liveness\_1 = propiedad\_liveness\_1 }\(\land\)\texttt{ (entro }\(\land\)\texttt{ salio);} \\
+\texttt{~~~~end actualizarPropiedadLiveness1}
+\end{flushleft}
+
+\begin{flushleft}
+\texttt{end atomic}
+\end{flushleft}
+\end{tcolorbox}
+
+\clearpage
+
+\section{Implementación en PowerDEVS}
+
+En la herramienta PowerDEVS, el tiempo de simulación que se maneja internamente no tiene una unidad de tiempo especificada, asi que nosotros decidimos que serán segundos.
+
+Así entonces, toda relación con el tiempo en el código del sistema de simulación se verá reflejado en segundos.
+
+\subsection{Componentes parametrizables}
+\label{sec:componentes_parametrizables}
+Los componentes parametrizables al implementar el sistema en PowerDEVS son:
+\begin{itemize}
+    \item GeneradorArribos
+    \begin{itemize}
+        \item mean: La media deseada para el generador aleatorio
+        \item seed: La semilla deseada para el generador aleatorio
+    \end{itemize}
+    \item SensorEntrada
+    \begin{itemize}
+        \item valor: Es un valor numérico que si es distinto de cero entonces el sensor inicia bloqueado
+        \item latencia: Lo que demora el sensor en detectar un auto
+        \item TIEMPO\_MAX\_ENTRADA\_VEHICULOS: Tiempo máximo para que entren autos al estacionamiento
+    \end{itemize}
+    \item SensorSalida
+    \begin{itemize}
+        \item valor: Un valor numérico que si es distinto de cero, el sensor inicia bloqueado
+        \item latencia: Lo que demora el sensor en detectar un auto
+    \end{itemize}
+    \item BarreraEntrada
+    \begin{itemize}
+        \item seed: La semilla deseada para la distribución uniforme
+        \item a: El valor mínimo de la distribución uniforme
+        \item b: El valor máximo de la distribución uniforme
+        \item tiempo\_apertura: Lo que demora la barrera en abrirse
+        \item tiempo\_cierre: Lo que demora la barrera en cerrarse
+        \item tiempo\_retiro: Lo que demora un auto rechazado en retirarse
+    \end{itemize}
+    \item BarreraSalida
+    \begin{itemize}
+        \item seed: La semilla deseada para la distribución uniforme
+        \item a: El valor mínimo de la distribución uniforme
+        \item b: El valor máximo de la distribución uniforme
+        \item tiempo\_apertura: Lo que demora la barrera en abrirse
+        \item tiempo\_cierre: Lo que demora la barrera en cerrarse
+    \end{itemize}
+    \item Controlador
+    \begin{itemize}
+        \item capacidad\_max\_estacionamiento: Un valor numérico referido a la capacidad máxima del estacionamiento
+        \item tiempo\_max\_rta\_controlador: Tiempo de decisión máximo del controlador
+    \end{itemize}
+    \item Monitor
+    \begin{itemize}
+        \item K\_ESTACIONAMIENTO: Un valor numérico referido a la capacidad máxima del estacionamiento
+    \end{itemize}
+\end{itemize}
+
+\clearpage
+
+\subsection{Conexión de modelos}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\linewidth]{Screenshot 2025-07-26 132616.png}
+    \caption{Modelo de simulación implementado en PowerDevs}
+    \label{fig:modelo_completo}
+\end{figure}
+
+\subsection{Configuración de la simulación}
+La implementación tiene la configuración referida al \hyperref[tab:resumen-parametros]{Cuadro ~\ref*{tab:resumen-parametros}}
+\begin{itemize}
+    \item Duración:
+    \begin{itemize}
+        \item Tiempo máximo de simulación: \\
+        Se configura al ejecutar la simulación, en el campo \textbf{Final Time}
+        \item Tiempo máximo del estacionamiento: \\
+        Se configura en los parámetros del sensor de entrada
+    \end{itemize}
+    \item Parámetros de los distintos atomics: \\ Para saber cómo ajustar los parámetros de los atomics, leer la subsección \hyperref[sec:componentes_parametrizables]{\textbf{Componentes parametrizables}}
+\end{itemize}
+
+\clearpage
+
+\subsection{Tabla de parámetros principales}
+
+\begin{table}[ht]
+  \centering
+  \resizebox{\textwidth}{!}{%
+    \begin{tabular}{|l|l|c|l|}
+    \hline
+    \textbf{Atomic} & \textbf{Parámetro} & \textbf{Valor} & \textbf{Descripción} \\ \hline
+    GeneradorArribos & mean & 10 & Media para los interarribos \\
+    GeneradorArribos & seed & 3 & Semilla para el generador exponencial \\
+    \\
+    SensorEntrada & valor & 0 & Boolean de sensor bloqueado \\
+    SensorEntrada & latencia & 1 & Latencia en sensar un auto \\
+    SensorEntrada & TIEMPO\_MAX\_ENTRADA\_VEHICULOS & 43200 & Tiempo máximo que está abierto el estacionamiento \\
+    \\
+    SensorSalida & valor & 0 & Boolean de sensor bloqueado \\
+    SensorSalida & latencia & 1 & Latencia en sensar un auto \\
+    \\
+    BarreraEntrada & seed & 29 & Semilla para la distribución uniforme \\
+    BarreraEntrada & a & 1 & Mínimo valor de la distribución uniforme \\
+    BarreraEntrada & b & 3 & Máximo valor de la distribución uniforme \\
+    BarreraEntrada & tiempo\_apertura & 4 & Tiempo que tarda la barrera en subir \\
+    BarreraEntrada & tiempo\_cierre & 4 & Tiempo que tarda la barrera en bajar \\
+    BarreraEntrada & tiempo\_retiro & 2 & Tiempo que tarda un auto rechazado en retirarse de la barrera\\
+    \\
+    BarreraSalida & seed & 29 & Semilla para la distribución uniforme \\
+    BarreraSalida & a & 1 & Mínimo valor de la distribución uniforme \\
+    BarreraSalida & b & 3 & Máximo valor de la distribución uniforme \\
+    BarreraSalida & tiempo\_apertura & 4 & Tiempo que tarda la barrera en subir \\
+    BarreraSalida & tiempo\_cierre & 4 & Tiempo que tarda la barrera en bajar \\
+    \\
+    Controlador & capacidad\_max\_estacionamiento & 30 & Capacidad máxima del estacionamiento \\
+    Controlador & tiempo\_max\_rta\_controlador & 3 & Tolerancia sobre autos con posibilidad de rechazo \\
+    \\
+    Monitor & K\_ESTACIONAMIENTO & 30 & Capacidad máxima del estacionamiento \\ \hline
+    \end{tabular}
+  }
+  \caption{Tabla con los valores de los parámetros usados en los distintos atomics}
+  \label{parametros_principales_implementacion}
+\end{table}
+
+
+\section{Diseño Experimental y Métricas}
+
+\subsection{Métricas a capturar}
+\begin{itemize}
+    \item Tiempo medio de permanencia (desde llegada hasta egreso).
+    \item Tasa de rechazo: vehículos denegados / llegadas totales.
+    \item Ocupación promedio: integral de ocupación / tiempo total.
+\end{itemize}
+
+\section{Casos propuestos para las corridas: }
+\label{tab:experimentos}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|p{3.5cm}|p{6cm}|p{4.5cm}|}
+\hline
+\textbf{N.º} & \textbf{Nombre} & \textbf{Parámetros modificados} & \textbf{Objetivo del experimento} \\
+
+\hline
+\hyperlink{exp1}{1} & Caso Sugerido (dado por el informe) &
+Capacidad = 30 \newline
+Arribos $\sim$ Exp($\lambda$ = 1/10 s) \newline
+Barreras: abrir 4 s, cerrar 4 s, pasar\_barrera $\sim$ U(1, 3) \newline
+Permanencia $\sim$ U(120, 300 s) &
+Establecer línea base para comparación \\
+
+\hline
+\hyperlink{exp2}{2} & Alta demanda &
+Arribos $\sim$ Exp($\lambda$ = 1/5 s) &
+Evaluar saturación del sistema y tasa de rechazo \\
+
+\hline
+\hyperlink{exp3}{3} & Menor capacidad &
+Capacidad = 10 &
+Estudiar impacto en liveness y rechazos \\
+
+\hline
+\hyperlink{exp4}{4} & Mayor capacidad &
+Capacidad = 50 \newline
+Arribos $\sim$ Exp($\lambda$ = 1/3 s) \newline
+Barrera: abrir/cerrar = 2 s &
+Evaluar estabilidad y ocupación en condiciones relajadas \\
+
+\hline
+\hyperlink{exp5}{5} & Demora en barreras &
+Barrera: abrir/cerrar = 8 s &
+Observar demoras acumuladas y posibles colas \\
+
+\hline
+\hyperlink{exp6}{6} & Barrera rápida &
+Barrera: abrir/cerrar = 2 s &
+Medir mejora en rendimiento \\
+
+\hline
+\hyperlink{exp7}{7} & Permanencia alta &
+Permanencia $\sim$ U(300, 600 s) &
+Simular vehículos que permanecen más tiempo estacionados \\
+
+\hline
+\hyperlink{exp8}{8} & Permanencia baja &
+Permanencia $\sim$ U(60, 120 s) &
+Simular alta rotación de vehículos \\
+
+\hline
+\hyperlink{exp9}{9} & Sensores más lentos &
+latencia = 3 &
+Analizar el comportamiento de las colas \\
+
+\hline
+\hyperlink{exp10}{10} & Congestión total &
+Capacidad = 10 \newline
+Arribos $\sim$ Exp($\lambda$ = 1/4 s) \newline
+Permanencia $\sim$ U(300, 600 s) &
+Evaluar comportamiento extremo ante bloqueos \\
+
+\hline
+\end{tabular}
+\caption{Configuraciones experimentales para la simulación del estacionamiento}
+\end{table}
+
+
+\newpage
+\section{Experimentos, Resultados y Gráficos}
+
+Cada gráfico representa:
+\begin{itemize}
+  \item \textbf{Ocupación promedio:} cantidad acumulada de vehículos dentro del estacionamiento a lo largo del tiempo.
+  \item \textbf{Permanencia promedio:} histograma del tiempo que cada vehículo permaneció dentro del estacionamiento.
+  \item \textbf{Tasa de rechazo:} cantidad de autos rechazados a lo largo de la simulación sobre la cantidad de autos que intentaron entrar (admitidos+rechazados).
+\end{itemize}
+
+El eje coordenado \textbf{x} denota el Tiempo de la simulación, expresado en segundos.
+
+El eje coordenado \textbf{y} denota el valor del estadístico que corresponda, en un tiempo determinado.
+
+% -------------------- EXPERIMENTO 1 --------------------
+\hypertarget{exp1}{}
+\subsection{Experimento 1}
+\begin{center}
+    Véase configuración en la Tabla~\ref{tab:experimentos}
+\end{center}
+
+{\small
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.75\textwidth]{exp1-ocupacion.png}
+\caption{Ocupación promedio del Experimento 1}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.75\textwidth]{exp1-permanencia.png}
+\caption{Tiempos de permanencia del Experimento 1}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.75\textwidth]{exp1-rechazo.png}
+\caption{Rechazos acumulados del Experimento 1}
+\end{figure}
+}
+
+\textbf{Conclusión del Experimento 1:} El controlador no rechazó ningún vehículo; la ocupación se mantuvo en torno a 25 autos de una capacidad máxima de 30, y los tiempos de permanencia oscilaron entre 250 y 300 unidades de tiempo.
+
+
+% -------------------- EXPERIMENTO 2 --------------------
+\hypertarget{exp2}{}
+\subsection{Experimento 2}
+\begin{center}
+    Véase configuración en la Tabla~\ref{tab:experimentos}
+\end{center}
+
+{\small
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.75\textwidth]{exp2-ocupacion.png}
+\caption{Ocupación promedio del Experimento 2}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.75\textwidth]{exp2-permanencia.png}
+\caption{Tiempos de permanencia del Experimento 2}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.75\textwidth]{exp2-rechazo.png}
+\caption{Rechazos acumulados del Experimento 2}
+\end{figure}
+}
+
+\textbf{Conclusión del Experimento 2:} Al igual que en el Experimento 1, no hubo rechazos y la ocupación promedio alcanzó aproximadamente 25 vehículos, con tiempos de permanencia entre 250 y 300. La similitud de resultados evidencia que la barrera de entrada actúa como cuello de botella, permitiendo la salida de vehículos antes de que lleguen nuevos, lo que explica la ausencia de rechazos.
+
+
+% -------------------- EXPERIMENTO 3 --------------------
+\hypertarget{exp3}{}
+\subsection{Experimento 3}
+\begin{center}
+    Véase configuración en la Tabla~\ref{tab:experimentos}
+\end{center}
+
+{\small
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.75\textwidth]{exp3-ocupacion.png}
+\caption{Ocupación promedio del Experimento 3}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.75\textwidth]{exp3-permanencia.png}
+\caption{Tiempos de permanencia del Experimento 3}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.75\textwidth]{exp3-rechazo.png}
+\caption{Rechazos acumulados del Experimento 3}
+\end{figure}
+}
+
+\textbf{Conclusión del Experimento 3:} A diferencia de los experimentos previos, en este caso sí se registraron rechazos. Al reducir la capacidad del estacionamiento, la tasa de rechazo aumentó y la ocupación promedio alcanzó el límite máximo; los tiempos de permanencia se mantuvieron entre 250 y 300.
+
+
+% -------------------- EXPERIMENTO 4 --------------------
+\hypertarget{exp4}{}
+\subsection{Experimento 4}
+\begin{center}
+    Véase configuración en la Tabla~\ref{tab:experimentos}
+\end{center}
+
+{\small
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.75\textwidth]{exp4-ocupacion.png}
+\caption{Ocupación promedio del Experimento 4}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.75\textwidth]{exp4-permanencia.png}
+\caption{Tiempos de permanencia del Experimento 4}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.75\textwidth]{exp4-rechazo.png}
+\caption{Rechazos acumulados del Experimento 4}
+\end{figure}
+}
+
+\textbf{Conclusión del Experimento 4:} A pesar de un mayor ritmo de arribos, el incremento de la capacidad y la duplicación de la velocidad de las barreras evitaron rechazos; la ocupación promedio se situó entre 35 y 40 vehículos, con tiempos de permanencia entre 250 y 300.
+
+
+% -------------------- EXPERIMENTO 5 --------------------
+\hypertarget{exp5}{}
+\subsection{Experimento 5}
+\begin{center}
+    Véase configuración en la Tabla~\ref{tab:experimentos}
+\end{center}
+
+{\small
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.75\textwidth]{exp5-ocupacion.png}
+\caption{Ocupación promedio del Experimento 5}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.75\textwidth]{exp5-permanencia.png}
+\caption{Tiempos de permanencia del Experimento 5}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.75\textwidth]{exp5-rechazo.png}
+\caption{Rechazos acumulados del Experimento 5}
+\end{figure}
+}
+
+\textbf{Conclusión del Experimento 5:} Al reducir a la mitad la velocidad de las barreras, la ocupación promedio descendió a 14–16 vehículos y los tiempos de permanencia se mantuvieron entre 250 y 300. No se produjeron rechazos, ya que la lentitud de las barreras limitó el número de ingresos.
+
+
+% -------------------- EXPERIMENTO 6 --------------------
+\hypertarget{exp6}{}
+\subsection{Experimento 6}
+\begin{center}
+    Véase configuración en la Tabla~\ref{tab:experimentos}
+\end{center}
+
+{\small
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.75\textwidth]{exp6-ocupacion.png}
+\caption{Ocupación promedio del Experimento 6}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.75\textwidth]{exp6-permanencia.png}
+\caption{Tiempos de permanencia del Experimento 6}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.75\textwidth]{exp6-rechazo.png}
+\caption{Rechazos acumulados del Experimento 6}
+\end{figure}
+}
+
+\textbf{Conclusión del Experimento 6:} Con las barreras al doble de velocidad y las demás condiciones iguales, la ocupación promedio osciló entre 20 y 25 vehículos y los tiempos de permanencia entre 200 y 250; sin embargo, se observaron picos ascendentes en la tasa de rechazo, que alcanzó valores próximos a 0,012, debido a la saturación cuando un vehículo llegaba con el estacionamiento lleno.
+
+% -------------------- EXPERIMENTO 7 --------------------
+\hypertarget{exp7}{}
+\subsection{Experimento 7}
+\begin{center}
+    Véase configuración en la Tabla~\ref{tab:experimentos}
+\end{center}
+
+{\small
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.75\textwidth]{exp7-ocupacion.png}
+\caption{Ocupación promedio del Experimento 7}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.75\textwidth]{exp7-permanencia.png}
+\caption{Tiempos de permanencia del Experimento 7}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.75\textwidth]{exp7-rechazo.png}
+\caption{Rechazos acumulados del Experimento 7}
+\end{figure}
+}
+
+\textbf{Conclusión del Experimento 7:} La ocupación promedio se mantuvo al límite de la capacidad (30 vehículos), los tiempos de permanencia subieron a 450–500 y la tasa de rechazo escaló entre 0,35 y 0,4. En escenarios de estancias prolongadas es natural alcanzar la saturación y que aumenten los rechazos, lo que sugiere la necesidad de aumentar recursos, por ejemplo, ampliando la capacidad máxima.
+
+% -------------------- EXPERIMENTO 8 --------------------
+\hypertarget{exp8}{}
+\subsection{Experimento 8}
+\begin{center}
+    Véase configuración en la Tabla~\ref{tab:experimentos}
+\end{center}
+
+{\small
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.75\textwidth]{exp8-ocupacion.png}
+\caption{Ocupación promedio del Experimento 8}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.75\textwidth]{exp8-permanencia.png}
+\caption{Tiempos de permanencia del Experimento 8}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.75\textwidth]{exp8-rechazo.png}
+\caption{Rechazos acumulados del Experimento 8}
+\end{figure}
+}
+
+\textbf{Conclusión del Experimento 8:} Con tiempos de permanencia reducidos a 120–140, la ocupación promedio descendió a 10–12 vehículos y no se registraron rechazos, confirmando que estadías más breves alivian la carga sin afectar la tasa de rechazo respecto a escenarios de baja demanda.
+
+% -------------------- EXPERIMENTO 9 --------------------
+\hypertarget{exp9}{}
+\subsection{Experimento 9}
+\begin{center}
+    Véase configuración en la Tabla~\ref{tab:experimentos}
+\end{center}
+
+{\small
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.75\textwidth]{exp9-ocupacion.png}
+\caption{Ocupación promedio del Experimento 9}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.75\textwidth]{exp9-permanencia.png}
+\caption{Tiempos de permanencia del Experimento 9}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.75\textwidth]{exp9-rechazo.png}
+\caption{Rechazos acumulados del Experimento 9}
+\end{figure}
+}
+
+\textbf{Conclusión del Experimento 9:} Al ralentizar los sensores, la ocupación promedio se redujo a 20–25 vehículos, con tiempos de permanencia entre 250 y 300 y sin rechazos, lo que demuestra que una detección más lenta limita los ingresos sin provocar rechazos.
+
+% -------------------- EXPERIMENTO 10 --------------------
+\hypertarget{exp10}{}
+\subsection{Experimento 10}
+\begin{center}
+    Véase configuración en la Tabla~\ref{tab:experimentos}
+\end{center}
+
+{\small
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.75\textwidth]{exp10-ocupacion.png}
+\caption{Ocupación promedio del Experimento 10}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.75\textwidth]{exp10-permanencia.png}
+\caption{Tiempos de permanencia del Experimento 10}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.75\textwidth]{exp10-rechazo.png}
+\caption{Rechazos acumulados del Experimento 10}
+\end{figure}
+}
+
+\textbf{Conclusión del Experimento 10:} En un escenario muy adverso —capacidad mínima, arribos rápidos y permanencias largas— la ocupación se mantuvo al límite (9–10 vehículos), los tiempos de permanencia ascendieron a 450–500 y la tasa de rechazo aumentó drásticamente entre 0,7 y 0,8, rechazándose casi todos los vehículos al saturarse el sistema desde el inicio.
+
+\vspace{2cm}
+\hrule
+\vspace{0.5cm}
+
+\textbf{Conclusión General:} \\
+Los experimentos realizados muestran una fuerte dependencia del desempeño del sistema respecto a la configuración de sus parámetros, como la capacidad del estacionamiento, la tasa de arribo de vehículos, y el tiempo de permanencia. En escenarios con baja demanda, el sistema opera eficientemente sin rechazos y con tiempos razonables. En cambio, al aumentar la demanda sin modificar la capacidad, la tasa de rechazo crece rápidamente, y los tiempos de permanencia se vuelven muy elevados, lo cual puede deteriorar la experiencia del usuario y la eficiencia operativa. Estos resultados permiten identificar configuraciones que garantizan seguridad, eficiencia y satisfacción del usuario.
+
+\clearpage
+
+\section{Intervalo de confianza}
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|c|c|}
+\hline
+\textbf{Métrica} & \textbf{Media} & \textbf{Desvío muestral} \\
+\hline
+Tasa de Rechazo & 0.1811 & 0.3095 \\
+Tiempo de Permanencia (s) & 290.85 & 103.76 \\
+Promedio de Ocupación (vehículos) & 20.69 & 9.05 \\
+\hline
+\end{tabular}
+\caption{Resumen estadístico de los 10 experimentos}
+\label{tab:resumen_estadistico}
+\end{table}
+
+\[
+IC = \bar{X} \pm t_{1-\alpha/2,\ n-1} \cdot \frac{S}{\sqrt{n}}
+\]
+
+donde:
+\begin{itemize}
+  \item $\bar{X}$ es la media muestral.
+  \item $S$ es el desvío estándar muestral.
+  \item $n$ es el tamaño de la muestra.
+\end{itemize}
+
+
+Para $\alpha = 0{.}05$ y $n = 10$:
+
+\[
+t_{1 - 0{.}025,\ 9} = t_{0{.}975,\ 9} \approx 2{.}2622
+\]
+\vspace{0.2cm}
+\hline
+
+\subsection{Intervalo de confianza del 95\% para la Tasa de Rechazo}
+\label{sec:ic_tasa_rechazo}
+\[
+\bar{X} = 0{,}1811,\quad S = 0{,}3095
+\]
+
+\[
+IC_{95\%} = 0{.}1811 \pm 2{.}2622 \cdot \frac{0{.}3095}{\sqrt{10}} \approx 0{.}1811 \pm 0{.}2214
+\]
+
+\[
+\Rightarrow \boxed{[-0{.}0403,\ 0{.}4025]}
+\]
+\vspace{0.2cm}
+\hline
+
+
+\subsection{Intervalo de confianza del 95\% para el Tiempo de Permanencia}
+\label{sec:ic_permanencia}
+\[
+\bar{X} = 290{,}85,\quad S = 103{,}76
+\]
+
+\[
+IC_{95\%} = 290{.}85 \pm 2{.}2622 \cdot \frac{103{.}76}{\sqrt{10}} \approx 290{.}85 \pm 74{.}20
+\]
+
+\[
+\Rightarrow \boxed{[216{.}6231,\ 365{.}0768]}
+\]
+\vspace{0.2cm}
+\hline
+
+\subsection{Intervalo de confianza del 95\% para la Ocupación Promedio}
+\label{sec:ic_ocupacion}
+\[
+\bar{X} = 20{.}69,\quad S = 9{.}05
+\]
+
+\[
+IC_{95\%} = 20{.}69 \pm 2{.}2622 \cdot \frac{9{.}05}{\sqrt{10}} \approx 20{.}69 \pm 6{.}47
+\]
+
+\[
+\Rightarrow \boxed{[14{.}2159,\ 27{.}1641]}
+\]
+\vspace{0.2cm}
+\hline
+
+\subsection{Visualización de los intervalos de confianza}
+
+A continuación se presenta un gráfico de barras de error (\textit{error bar plot}) que muestra los intervalos de confianza del 95\% para las tres métricas principales evaluadas en los experimentos:
+
+\begin{itemize}
+    \item \textbf{Tasa de Rechazo}
+    \item \textbf{Tiempo Promedio de Permanencia}
+    \item \textbf{Ocupación Promedio}
+\end{itemize}
+
+Cada punto central representa la media observada de la métrica, mientras que las barras verticales indican el intervalo de confianza asociado. Estas barras permiten visualizar gráficamente la incertidumbre en la estimación de la media, basada en la variabilidad de los datos obtenidos en las distintas simulaciones.
+
+Este tipo de representación resulta útil para:
+
+\begin{itemize}
+    \item Comparar la precisión relativa de las estimaciones.
+    \item Evaluar si las diferencias entre métricas podrían ser estadísticamente significativas.
+    \item Detectar posibles solapamientos entre intervalos que sugieran comportamientos similares.
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.75\textwidth]{grafico IC.png}
+\caption{\small
+Intervalos de confianza del 95\% para las métricas clave del sistema de estacionamiento: 
+tasa de rechazo, tiempo promedio de permanencia y ocupación promedio. 
+Cada barra representa el intervalo calculado.
+\textit{Nota: el intervalo de confianza para la tasa de rechazo incluye valores negativos debido a la dispersión y baja media. 
+Este resultado carece de sentido práctico (una tasa negativa no es posible), pero se conserva para reflejar la variabilidad estadística de la muestra.
+}
+}
+\label{fig:ic_estacionamiento}
+\end{figure}
+
+\vspace{0.2cm}
+
+Para más detalles sobre los valores utilizados, véase las secciones de los intervalos:
+\begin{itemize}
+    \item Tasa de Rechazo: sección~\ref{sec:ic_tasa_rechazo}
+    \item Tiempo de Permanencia: sección~\ref{sec:ic_permanencia}
+    \item Ocupación Promedio: sección~\ref{sec:ic_ocupacion}
+\end{itemize}
+
+
+
+
+
+\clearpage
+\section{Análisis de Propiedades}
+\subsection{Safety}
+Esta propiedad debe mostrar que en todo experimento realizado la ocupación máxima nunca supera 30.
+
+En nuestro sistema, los experimentos van a cumplir siempre con esta propiedad porque el controlador revisa en las peticiones de entrada al estacionamiento si la cantidad de autos actual en el estacionamiento es menor a 30 o igual a 30.
+
+En caso que la cantidad de autos sea menor a 30, el auto que quiere entrar es permitido y se le avisa a la barrera para abrirse y el auto pasa al estacionamiento.
+
+En caso que la cantidad de autos sea igual a 30, el auto queda demorado como máximo 3 segundos. 
+
+Si pasan los 3 segundos y ningún auto se retiró, se le avisa a la barrera que no se abra y el auto se retira luego de 2 segundos. Cabe destacar que en este proceso de rechazar nunca se sumó la cantidad de autos, por lo que sigue siendo 30.
+
+Si dentro de los 3 segundos se encontró que algún auto se retiró, el auto sigue un proceso igual al que alguien que entra como si hubiera cantidad de autos menor a 30. Y lo que pasa con la cantidad de autos es que disminuyó en 1 unidad cuando salió alguien y vuelve a subir en 1 unidad nuevamente con este auto, manteniendo así que la cantidad de autos es igual a 30.
+
+\subsection{Liveness 1}
+Esta propiedad debe mostrar que todo auto que entró al estacionamiento se retiró antes del tiempo final de simulación.
+
+En el sistema, todos los experimentos cumplen con esta propiedad porque el sensor de entrada va a dejar de detectar autos y enviarlos al controlador cuando el tiempo total de apertura del estacionamiento se concluye.
+
+Para esto, se compara el tiempo actual de simulación contra el tiempo total de apertura del estacionamiento. En caso de que esto ocurra, se activa un flag de fin de simulación y dejará bloqueado el sensor indefinidamente, evitando que los autos generados por el generador exponencial pasen a etapas del controlador y las barreras.
+
+Esto siempre será posible si se pone un tiempo de simulación mayor que el tiempo total de apertura del estacionamiento.
+
+Una vez el sensor queda bloqueado por fin de simulación, ahora el controlador, el estacionamiento, la barrera de salida y el sensor de salida son los encargados de vaciar el estacionamiento naturalmente.
+
+\subsection{Liveness 2}
+Esta propiedad se encarga de revisar que cada auto dentro del estacionamiento no exceda el 1\% de su tiempo de estacionado al salir del estacionamiento 
+
+Esta propiedad en ningún caso se cumple, ni siquiera en el peor caso de 300 segs, porque se le está pidiendo que cada auto no demore mas de 1\% de tiempo en salir. En este caso tiene hasta 3 segundos de tolerancia para salir, pero ya sabemos que las barreras tardan un mínimo de 4 segundos en abrirse, y 4 en cerrarse, además del tiempo asignado por la distribución uniforme en cruzar la barrera, por lo que nunca se puede cumplir esta propiedad.
+
+Se debería aumentar el porcentaje de tolerancia permitido en salir, que mínimo sea mayor a 4 segundos (el tiempo mínimo de la barrera en abrirse) más 4 (el tiempo mínimo de la barrera en cerrarse) más 3 (el tiempo máximo para cruzar la barrera) más 1 (el tiempo que tarda el sensor en detectar el vehículo).
+
+Este nuevo cambio es ligeramente más permisivo, pero tampoco asegura que se cumpla siempre por culpa de las colas de salida. 
+
+Para que esta propiedad pueda cumplirse en algún momento, se podría pedir un porcentaje más razonable, como 10\% o más por ejemplo. También se podría reducir el tiempo de apertura y cerrado de la barrera de salida, o el tiempo de detectar un vehículo en el sensor de salida.
+
+\section{Discusión y Sugerencias de Mejora}
+
+\subsection{Impacto de parámetros en rechazos y ocupación.}
+Los parámetros que se usen para los distintos atomics afectan al desempeño del sistema sin dudas. Modificar la capacidad del estacionamiento, las distintas velocidades tales como detección en los sensores, apertura o cierre en las barreras serían posibles cambios en un escenario real, y con la conclusión de los distintos experimentos simulados se puede saber qué podría llegar a pasar, que es una de las ideas principales de simular sistemas.
+
+\subsection{Posible extensión: múltiples barreras, mayores velocidades o capacidad en el estacionamiento.}
+Basándonos en el experimento 1, que es la implementación base del sistema simulado, los resultados obtenidos denotan un sistema bastante estable, porque se mantiene una ocupación alta y pocos rechazos.
+
+Si pensaramos en una posible extensión sería en añadir más barreras, pero a coste de añadir más plazas al estacionamiento, porque los resultados estadísticos arrojan que la capacidad es muy alta, sin llegar al límite, pero si se añade una barrera más se piensa en que llegan al estacionamiento el doble de autos, por lo que es fundamental que se añadan plazas extra para no producir rechazos en exceso.
+
+Luego, cada experimento refleja una situación en particular, en donde los recursos añadidos o quitados en cada uno de ellos depende puntualmente de la situación que refleje.
+
+Hay una buena discusión al hablar de mejorar las distintas velocidades presentes en el sistema, pensando en la experiencia del usuario en cuanto a las demoras reales que puede tener, que eventualmente recae sobre simular un sistema realista. 
+
+En este sentido, uno podría decir que simular velocidades realmente rápidas para sus componentes atraería una mejora en la experiencia del usuario, pero que son físicamente imposibles de llevar a la realidad, por lo que una simulación de ese estilo es meramente virtual, y el sistema simulado no se puede llevar a cabo en la realidad.
+
+\section{Conclusiones}
+
+El sistema de simulación implementado demuestra un correcto funcionamiento general, cumpliendo con las propiedades fundamentales de \textit{Safety} y \textit{Liveness 1} en todos los escenarios evaluados. Específicamente:
+
+\begin{itemize}
+    \item \textbf{Safety:} En ninguna de las simulaciones la ocupación del estacionamiento superó el valor máximo permitido de 30 vehículos, validando la lógica de control establecida en el modelo.
+    
+    \item \textbf{Liveness 1:} Todos los vehículos admitidos en el sistema lograron egresar antes de finalizar la simulación, garantizando la fluidez del sistema bajo las condiciones planteadas.
+
+    \item \textbf{Liveness 2:} Esta propiedad no se cumplió en ningún experimento, dado que los tiempos físicos de detección, apertura y cruce superan el 1\% de tolerancia establecida. Esto señala la necesidad de revisar dicha restricción o adaptar los tiempos operativos si se busca cumplirla en el futuro.
+\end{itemize}
+
+\subsection{Recomendaciones para la operación real}
+
+A partir del análisis de los experimentos, se destacan las siguientes recomendaciones prácticas para un sistema real:
+
+\begin{itemize}
+    \item \textbf{Ajustar la capacidad del estacionamiento} en función de la demanda proyectada. Simulaciones con capacidad reducida evidenciaron una alta tasa de rechazo que afecta negativamente la eficiencia del sistema.
+
+    \item \textbf{Mejorar los tiempos de respuesta de los componentes}, como sensores y barreras, siempre que sea físicamente factible. Esto permitiría incrementar el rendimiento sin comprometer la seguridad operativa.
+
+    \item \textbf{Evitar la saturación prolongada} en escenarios de alta permanencia, mediante políticas que incentiven la rotación de vehículos o con mecanismos de reserva de plazas.
+
+    \item \textbf{Tolerancia más realista para Liveness 2:} Ajustar el umbral de cumplimiento de esta propiedad a un valor factible (por ejemplo, 10\% del tiempo de permanencia) permitiría verificar su cumplimiento sin forzar restricciones inviables en contextos físicos reales.
+\end{itemize}
+
+\subsection{Líneas futuras de investigación}
+
+Se sugieren a continuación posibles ampliaciones del trabajo realizado:
+
+\begin{itemize}
+    \item \textbf{Simulación con múltiples barreras de ingreso o egreso}, evaluando el impacto en la tasa de rechazo y en la ocupación bajo diferentes esquemas de coordinación y prioridad.
+
+    \item \textbf{Modelado de fallas en sensores o barreras}, para incorporar análisis de confiabilidad y robustez operativa ante situaciones no ideales.
+
+    \item \textbf{Evaluación de estrategias dinámicas}, como admisión condicional basada en predicciones de egresos, o modulación de tarifas según ocupación, permitiendo un control adaptativo más sofisticado.
+
+    \item \textbf{Validación empírica con datos reales} de estacionamientos automatizados, para calibrar los parámetros del modelo y comparar los resultados de la simulación con escenarios reales.
+
+    \item \textbf{Integración con sistemas IoT y tecnologías de Smart City}, con el fin de estudiar su viabilidad en un entorno urbano inteligente.
+\end{itemize}
+
+\subsection{Reflexión final}
+
+La simulación de este tipo de sistemas ofrece un entorno controlado donde analizar y comparar distintas configuraciones operativas sin incurrir en costos reales. Los resultados obtenidos permiten extraer conclusiones relevantes tanto para el diseño de sistemas automatizados como para su posterior evaluación y mejora continua. Así, este trabajo sienta una base sólida para futuras aplicaciones y estudios en el ámbito de la simulación de sistemas de acceso vehicular inteligente.
+
+\section{Referencias}
+\begin{enumerate}
+    \item Especificación del proyecto (PowerDEVS)
+    \item Zeigler, B. P., “Theory of Modeling and Simulation,” 2018.
+    \item Wainer, G., “Discrete‐Event Modeling and Simulation,” 2009.
+    \item Cristiá, Maximiliano \& Hollmann, Diego \& Frydman, Claudia. (2018). A multi-target compiler for CML-DEVS. SIMULATION. 95. 003754971876508. 10.1177/0037549718765080. 
+    \item Diego A. Hollmann, Maximiliano Cristiá, Claudia Frydman, CML-DEVS: A specification language for DEVS conceptual models, Simulation Modelling Practice and Theory, Volume 57, 2015, Pages 100-117, ISSN 1569-190X, \\ https://doi.org/10.1016/j.simpat.2015.06.007.
+    \item Hollmann, D. A. (2014). Traducción y validación sistemática y automática de modelos DEVS abstractos (Tesis doctoral). Universidad Nacional de Rosario, Facultad de Ciencias Exactas, Ingeniería y Agrimensura, Rosario, Argentina.
+\end{enumerate}
+\end{document}
