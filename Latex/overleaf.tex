@@ -154,6 +154,8 @@ Monitor     & Atómico            & Contiene y realiza todas las estadisticas ne
 \caption{Componentes modelados del sistema de estacionamiento inteligente.}
 \end{table}
 
+\clearpage
+
 \subsection{Resumen de parámetros temporales}
 
 \begin{table}[h!]
@@ -172,6 +174,8 @@ Cierre de barrera              & 4 s                                            
 Tiempo de retiro               & 2 s (si no se permite el ingreso)                      \\ \hline
 Permanencia                    & Uniforme entre 120 y 300 s                             \\ \hline
 Sensor de salida               & 1 s de latencia                                        \\ \hline
+Tiempo total de apertura del estacionamiento  & 43200 s (12 horas)                      \\ \hline
+Tiempo total de simulación     & 58000 s (debe ser mayor a 12 horas)                    \\ \hline
 \end{tabular}
 \caption{Resumen de parámetros temporales utilizados en la simulación}
 \label{tab:resumen-parametros}
@@ -280,7 +284,6 @@ Sensor de salida               & 1 s de latencia                                
             \item \texttt{VOLVER\_A\_SENSAR\_SALIDA}
             \item \texttt{ENTRADA\_BARRERA\_DEMORA\_Y\_VOLVER\_SENSAR\_SALIDA}
             \item \texttt{VOLVER\_A\_SENSAR\_ENTRADA}
-            \item \texttt{BLOQUEAR\_SENSOR\_ENTRADA\_FIN\_SIMULACION}
         \end{itemize}
     \end{minipage}
     \caption{Componente \texttt{Controlador}: gestiona la lógica de ingreso y egreso según el estado del sistema.}
@@ -1288,9 +1291,11 @@ La implementación tiene la configuración referida al \hyperref[tab:resumen-par
     \item Duración:
     \begin{itemize}
         \item Tiempo máximo de simulación: \\
-        Se configura al ejecutar la simulación, en el campo \textbf{Final Time}
-        \item Tiempo máximo del estacionamiento: \\
-        Se configura en los parámetros del sensor de entrada
+        Se configura al ejecutar la simulación, en el campo \textbf{Final Time}.
+        Debe ser mayor al tiempo máximo del estacionamiento para que los autos puedan retirarse correctamente y no romper la propiedad de Liveness.
+        \item Tiempo máximo de apertura del estacionamiento: \\
+        Se configura en los parámetros del sensor de entrada.
+        Debe ser menor al tiempo máximo de simulación para que los autos puedan entrar y retirarse correctamente y no romper la propiedad de Liveness.
     \end{itemize}
     \item Parámetros de los distintos atomics: \\ Para saber cómo ajustar los parámetros de los atomics, leer la subsección \hyperref[sec:componentes_parametrizables]{\textbf{Componentes parametrizables}}
 \end{itemize}
@@ -1738,20 +1743,43 @@ Los experimentos realizados muestran una fuerte dependencia del desempeño del s
 
 \clearpage
 
-\section{Intervalo de confianza}
+\section{Intervalos de confianza}
+Los escenarios planteados son muy similares en cuanto a gráficos y rendimiento, entonces para ilustrar un caso proponemos ver el escenario uno en: \hyperlink{exp1}{"\ Experimento 1 "\ }, y si se desea ver el resto, se puede modificar los parametros en el modelo y ver los resultados arrojados por el monitor.
+
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|c|c|}
+\hline
+\textbf{Escenario} & \textbf{Generador} & \textbf{Barreras} & \textbf{Estacionamiento} \\
+\hline
+1 & 3  & 29 & 40 \\
+2 & 4  & 17 & 30 \\
+3 & 22 & 29 & 40 \\
+4 & 6  & 25 & 81 \\
+5 & 2  & 1  & 10 \\
+6 & 8  & 9  & 21 \\
+7 & 7  & 21 & 14 \\
+8 & 52 & 22 & 3  \\
+9 & 25 & 19 & 25 \\
+10 & 30 & 1  & 1  \\
+\hline
+\end{tabular}
+\caption{Escenarios. Cada combinación de valores en Generador, Barreras y Estacionamiento corresponde a una configuración distinta de semillas aleatorias, utilizadas para introducir variabilidad controlada en las simulaciones.}
+\end{table}
+
 \begin{table}[H]
 \centering
 \begin{tabular}{|l|c|c|}
 \hline
-\textbf{Métrica} & \textbf{Media} & \textbf{Desvío muestral} \\
+\textbf{Métrica} & \textbf{Media} & \textbf{Desvío estándar} \\
 \hline
-Tasa de Rechazo & 0.1811 & 0.3095 \\
-Tiempo de Permanencia (s) & 290.85 & 103.76 \\
-Promedio de Ocupación (vehículos) & 20.69 & 9.05 \\
+Permanencia & 278.305 & 4.389 \\
+Ocupación   & 25.108  & 0.384 \\
+Rechazo     & 0.000   & 0.000 \\
 \hline
 \end{tabular}
-\caption{Resumen estadístico de los 10 experimentos}
-\label{tab:resumen_estadistico}
+\caption{Media y desvío estándar de las métricas obtenidas en los 10 escenarios}
 \end{table}
 
 \[
@@ -1765,7 +1793,6 @@ donde:
   \item $n$ es el tamaño de la muestra.
 \end{itemize}
 
-
 Para $\alpha = 0{.}05$ y $n = 10$:
 
 \[
@@ -1777,32 +1804,31 @@ t_{1 - 0{.}025,\ 9} = t_{0{.}975,\ 9} \approx 2{.}2622
 \subsection{Intervalo de confianza del 95\% para la Tasa de Rechazo}
 \label{sec:ic_tasa_rechazo}
 \[
-\bar{X} = 0{,}1811,\quad S = 0{,}3095
+\bar{X} = 0{,}0000,\quad S = 0{,}0000
 \]
 
 \[
-IC_{95\%} = 0{.}1811 \pm 2{.}2622 \cdot \frac{0{.}3095}{\sqrt{10}} \approx 0{.}1811 \pm 0{.}2214
+IC_{95\%} = 0{.}0000 \pm 2{.}2622 \cdot \frac{0{.}0000}{\sqrt{10}} = 0{.}0000
 \]
 
 \[
-\Rightarrow \boxed{[-0{.}0403,\ 0{.}4025]}
+\Rightarrow \boxed{[0{.}0000,\ 0{.}0000]}
 \]
 \vspace{0.2cm}
 \hline
 
-
 \subsection{Intervalo de confianza del 95\% para el Tiempo de Permanencia}
 \label{sec:ic_permanencia}
 \[
-\bar{X} = 290{,}85,\quad S = 103{,}76
+\bar{X} = 278{,}305,\quad S = 4{,}389
 \]
 
 \[
-IC_{95\%} = 290{.}85 \pm 2{.}2622 \cdot \frac{103{.}76}{\sqrt{10}} \approx 290{.}85 \pm 74{.}20
+IC_{95\%} = 278{.}305 \pm 2{.}2622 \cdot \frac{4{.}389}{\sqrt{10}} \approx 278{.}305 \pm 3{.}139
 \]
 
 \[
-\Rightarrow \boxed{[216{.}6231,\ 365{.}0768]}
+\Rightarrow \boxed{[275{.}166,\ 281{.}444]}
 \]
 \vspace{0.2cm}
 \hline
@@ -1810,17 +1836,18 @@ IC_{95\%} = 290{.}85 \pm 2{.}2622 \cdot \frac{103{.}76}{\sqrt{10}} \approx 290{.
 \subsection{Intervalo de confianza del 95\% para la Ocupación Promedio}
 \label{sec:ic_ocupacion}
 \[
-\bar{X} = 20{.}69,\quad S = 9{.}05
+\bar{X} = 25{.}108,\quad S = 0{.}384
 \]
 
 \[
-IC_{95\%} = 20{.}69 \pm 2{.}2622 \cdot \frac{9{.}05}{\sqrt{10}} \approx 20{.}69 \pm 6{.}47
+IC_{95\%} = 25{.}108 \pm 2{.}2622 \cdot \frac{0{.}384}{\sqrt{10}} \approx 25{.}108 \pm 0{.}275
 \]
 
 \[
-\Rightarrow \boxed{[14{.}2159,\ 27{.}1641]}
+\Rightarrow \boxed{[24{.}833,\ 25{.}383]}
 \]
 \vspace{0.2cm}
+
 \hline
 
 \subsection{Visualización de los intervalos de confianza}
@@ -1835,24 +1862,14 @@ A continuación se presenta un gráfico de barras de error (\textit{error bar pl
 
 Cada punto central representa la media observada de la métrica, mientras que las barras verticales indican el intervalo de confianza asociado. Estas barras permiten visualizar gráficamente la incertidumbre en la estimación de la media, basada en la variabilidad de los datos obtenidos en las distintas simulaciones.
 
-Este tipo de representación resulta útil para:
-
-\begin{itemize}
-    \item Comparar la precisión relativa de las estimaciones.
-    \item Evaluar si las diferencias entre métricas podrían ser estadísticamente significativas.
-    \item Detectar posibles solapamientos entre intervalos que sugieran comportamientos similares.
-\end{itemize}
-
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.75\textwidth]{grafico IC.png}
+\includegraphics[width=0.75\textwidth]{IC-semillas.png}
 \caption{\small
 Intervalos de confianza del 95\% para las métricas clave del sistema de estacionamiento: 
 tasa de rechazo, tiempo promedio de permanencia y ocupación promedio. 
 Cada barra representa el intervalo calculado.
-\textit{Nota: el intervalo de confianza para la tasa de rechazo incluye valores negativos debido a la dispersión y baja media. 
-Este resultado carece de sentido práctico (una tasa negativa no es posible), pero se conserva para reflejar la variabilidad estadística de la muestra.
-}
+\textit{Nota: el intervalo de confianza para la tasa de rechazo es nulo, ya que en todos los experimentos fue 0.}
 }
 \label{fig:ic_estacionamiento}
 \end{figure}
@@ -1866,12 +1883,9 @@ Para más detalles sobre los valores utilizados, véase las secciones de los int
     \item Ocupación Promedio: sección~\ref{sec:ic_ocupacion}
 \end{itemize}
 
-\vspace{0.4cm}
-
 \subsection{Conclusión}
 
-A partir del análisis de los intervalos de confianza al 95\,\%, se observa que la \textbf{Tasa de Rechazo} presenta alta variabilidad e incertidumbre, aunque su valor medio (18\,\%) sugiere que una proporción significativa de vehículos no logra ingresar al sistema. El \textbf{Tiempo de Permanencia} se encuentra entre 217 y 365 segundos, indicando una duración moderada dentro del sistema. Por su parte, la \textbf{Ocupación Promedio} oscila entre 14 y 27 vehículos, reflejando una alta utilización del espacio disponible. Estos resultados evidencian un sistema con uso intensivo, posibles cuellos de botella y la necesidad de optimizar su capacidad para mejorar la eficiencia y reducir rechazos.
-
+A partir del análisis de los intervalos de confianza al 95\,\%, se observa que la \textbf{Tasa de Rechazo} fue nula en todos los escenarios, la excelente capacidad del sistema para admitir vehículos parte de la condición de que no haya colas prolongadas en el sensor de ingreso. En situaciones reales, si se acumulan vehículos esperando autorización podria generarse una demora significativa en el acceso aunque la experiencia interna sea fluída. El \textbf{Tiempo de Permanencia} presenta una media de aproximadamente 278 segundos, con un intervalo entre 275 y 281 segundos, lo cual indica una duración estable y controlada de los vehículos dentro del sistema. Por su parte, la \textbf{Ocupación Promedio} se encuentra entre 24.83 y 25.38 vehículos, evidenciando un uso intensivo y constante del espacio disponible. Estos resultados reflejan un sistema bien dimensionado en términos de capacidad y eficiencia, sin pérdidas por saturación durante las condiciones analizadas.
 
 \clearpage
 \section{Análisis de Propiedades}
