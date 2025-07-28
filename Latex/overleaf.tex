@@ -1581,7 +1581,7 @@ El eje coordenado \textbf{y} denota el valor del estadístico que corresponda, e
 \end{figure}
 }
 
-\textbf{Conclusión del Experimento 5:} Al reducir a la mitad la velocidad de las barreras, la ocupación promedio descendió a 14–16 vehículos y los tiempos de permanencia se mantuvieron entre 250 y 300. No se produjeron rechazos, ya que la lentitud de las barreras limitó el número de ingresos.
+\textbf{Conclusión del Experimento 5:} Al aumentar el doble el tiempo de rendimiento de las barreras(más lentas), la ocupación promedio descendió a 14–16 vehículos y los tiempos de permanencia se mantuvieron entre 250 y 300. No se produjeron rechazos, ya que la lentitud de las barreras limitó el número de ingresos.
 
 
 % -------------------- EXPERIMENTO 6 --------------------
@@ -1611,7 +1611,7 @@ El eje coordenado \textbf{y} denota el valor del estadístico que corresponda, e
 \end{figure}
 }
 
-\textbf{Conclusión del Experimento 6:} Con las barreras al doble de velocidad y las demás condiciones iguales, la ocupación promedio osciló entre 20 y 25 vehículos y los tiempos de permanencia entre 200 y 250; sin embargo, se observaron picos ascendentes en la tasa de rechazo, que alcanzó valores próximos a 0,012, debido a la saturación cuando un vehículo llegaba con el estacionamiento lleno.
+\textbf{Conclusión del Experimento 6:} Con las barreras al doble de velocidad, es decir, mejor rendimiento, menor tiempo de demora y las demás condiciones iguales, la ocupación promedio osciló entre 20 y 25 vehículos y los tiempos de permanencia entre 200 y 250; sin embargo, se observaron picos ascendentes en la tasa de rechazo, que alcanzó valores próximos a 0,012, debido a la saturación cuando un vehículo llegaba con el estacionamiento lleno.
 
 % -------------------- EXPERIMENTO 7 --------------------
 \hypertarget{exp7}{}
@@ -1876,9 +1876,9 @@ A partir del análisis de los intervalos de confianza al 95\,\%, se observa que 
 \clearpage
 \section{Análisis de Propiedades}
 \subsection{Safety}
-Esta propiedad debe mostrar que en todo experimento realizado la ocupación máxima nunca supera 30.
+Esta propiedad debe mostrar que en todo experimento realizado la ocupación máxima nunca supera la capacidad máxima del estacionamiento.
 
-En nuestro sistema, los experimentos van a cumplir siempre con esta propiedad porque el controlador revisa en las peticiones de entrada al estacionamiento si la cantidad de autos actual en el estacionamiento es menor a 30 o igual a 30.
+En nuestro sistema, utilizando una capacidad máxima de 30, los experimentos van a cumplir siempre con esta propiedad porque el controlador revisa en las peticiones de entrada al estacionamiento si la cantidad de autos actual en el estacionamiento es menor a 30 o igual a 30.
 
 En caso que la cantidad de autos sea menor a 30, el auto que quiere entrar es permitido y se le avisa a la barrera para abrirse y el auto pasa al estacionamiento.
 
@@ -1902,7 +1902,7 @@ Una vez el sensor queda bloqueado por fin de simulación, ahora el controlador, 
 \subsection{Liveness 2}
 Esta propiedad se encarga de revisar que cada auto dentro del estacionamiento no exceda el 1\% de su tiempo de estacionado al salir del estacionamiento 
 
-Esta propiedad en ningún caso se cumple, ni siquiera en el peor caso de 300 segs, porque se le está pidiendo que cada auto no demore mas de 1\% de tiempo en salir. En este caso tiene hasta 3 segundos de tolerancia para salir, pero ya sabemos que las barreras tardan un mínimo de 4 segundos en abrirse, y 4 en cerrarse, además del tiempo asignado por la distribución uniforme en cruzar la barrera, por lo que nunca se puede cumplir esta propiedad.
+Esta propiedad en ningún caso se cumple, ni siquiera en el peor caso de 300 segs, porque se le está pidiendo que cada auto no demore más de 1\% de tiempo en salir. En este caso tiene hasta 3 segundos de tolerancia para salir, pero ya sabemos que las barreras tardan un mínimo de 4 segundos en abrirse, y 4 en cerrarse, además del tiempo asignado por la distribución uniforme en cruzar la barrera, por lo que nunca se puede cumplir esta propiedad.
 
 Se debería aumentar el porcentaje de tolerancia permitido en salir, que mínimo sea mayor a 4 segundos (el tiempo mínimo de la barrera en abrirse) más 4 (el tiempo mínimo de la barrera en cerrarse) más 3 (el tiempo máximo para cruzar la barrera) más 1 (el tiempo que tarda el sensor en detectar el vehículo).
 
@@ -1916,7 +1916,7 @@ Para que esta propiedad pueda cumplirse en algún momento, se podría pedir un p
 Los parámetros que se usen para los distintos atomics afectan al desempeño del sistema sin dudas. Modificar la capacidad del estacionamiento, las distintas velocidades tales como detección en los sensores, apertura o cierre en las barreras serían posibles cambios en un escenario real, y con la conclusión de los distintos experimentos simulados se puede saber qué podría llegar a pasar, que es una de las ideas principales de simular sistemas.
 
 \subsection{Posible extensión: múltiples barreras, mayores velocidades o capacidad en el estacionamiento.}
-Basándonos en el experimento 1, que es la implementación base del sistema simulado, los resultados obtenidos denotan un sistema bastante estable, porque se mantiene una ocupación alta y pocos rechazos.
+Basándonos en el experimento 1, que es la implementación base del sistema simulado, los resultados obtenidos denotan un sistema bastante estable, porque se mantiene una ocupación alta y sin rechazos.
 
 Si pensaramos en una posible extensión sería en añadir más barreras, pero a coste de añadir más plazas al estacionamiento, porque los resultados estadísticos arrojan que la capacidad es muy alta, sin llegar al límite, pero si se añade una barrera más se piensa en que llegan al estacionamiento el doble de autos, por lo que es fundamental que se añadan plazas extra para no producir rechazos en exceso.
 
